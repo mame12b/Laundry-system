@@ -1,5 +1,6 @@
 import Order from "../models/Order.model.js";
 import { isValidTransition } from "../utils/orderFlow.js";
+import Payment from "../models/Payment.model.js"
 
 export const createOrder = async (req, res) => {
   try {
@@ -35,6 +36,11 @@ export const getOrders = async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });    
   }
 };
+
+export const getHotelOrders = async (req, res) => {
+  const orders =await Order.find({ customer: req.user.customer });
+  res.json(orders);
+};
  
 export const updateOrderStatus = async (req, res) => {
   try {
@@ -62,6 +68,13 @@ export const addPayment = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ message: "Order not found" });
+
+  const payment = await Payment.create({
+    order: order._id,
+    customer: order.customer,
+    amount: Number(req.body.amount),
+    receivedBy: req.user._id,
+  });
 
     order.paidAmount += Number(req.body.amount);
     await order.save();

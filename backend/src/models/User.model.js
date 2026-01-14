@@ -9,6 +9,7 @@ const userSchema = new mongoose.Schema({
         type: String,
         enum: ['Collector', 'Washer','Sorter','Ironer','Driver','Cashier','Manager','Hotel'],
         required: true,
+        default: "Collector"
     },
     password:{ type: String , required: true },
     active:{ type: Boolean , default: true },
