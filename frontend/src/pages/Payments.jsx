@@ -3,25 +3,42 @@ import { API, authHeader } from "../api";
 
 export default function Payments() {
     const [orderId, setOrderId] = useState("");
-    const [amoubt, setAmount] = useState("");
+    const [amount, setAmount] = useState("");
 
-    const submit = async() => {
+    const submit = async(e) => {
+      e.preventDefault();
+
         await fetch(`${API}/payments/${orderId}`, {
             method: "POST",
-            headers: { ...authHeader(), "Content-Type": "application/json"},
+            headers: authHeader(),
             body: JSON.stringify({ amount }),
         });
+
         alert("Payment added");
+        setAmount("");
+        setOrderId("");
     };
 
       return (
-    <div className="mt-4 bg-white p-3 rounded shadow">
-      <h2 className="font-bold mb-2">Add Payment</h2>
-      <input className="border p-2 w-full mb-2" placeholder="Order ID" onChange={e=>setOrderId(e.target.value)} />
-      <input className="border p-2 w-full mb-2" placeholder="Amount" onChange={e=>setAmount(e.target.value)} />
-      <button className="bg-green-600 text-white w-full py-2 rounded" onClick={submit}>
+    <form onSubmit={submit} className="p-4 space-y-2">
+      <input
+        placeholder="Order ID"
+        value={orderId}
+        onChange={(e) => setOrderId(e.target.value)}
+        className="border p-2 w-full"
+      />
+
+      <input
+        placeholder="Amount"
+        value={amount}
+        onChange={(e) => setAmount(e.target.value)}
+        className="border p-2 w-full"
+        type="number"
+      />
+
+      <button className="bg-green-600 text-white p-2 w-full rounded">
         Submit Payment
       </button>
-    </div>
+    </form>
   );
 }
