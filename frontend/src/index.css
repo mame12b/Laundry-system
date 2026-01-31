@@ -1,4 +1,14 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+/* 👇 REQUIRED so @apply works in this file */
+@reference "tailwindcss";
+
+.btn-primary {
+  @apply bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700;
+}
+
+.btn-secondary {
+  @apply bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700;
+}
+
 

@@ -1,6 +1,18 @@
+// src/api.js
 export const API = "http://localhost:5000/api";
 
 export const authHeader = () => {
-    const token = localStorage.getItem("token");
-    return token ? { Authorization:  `Bearer ${token}`} : {};  
+  const raw = localStorage.getItem("user");
+  if (!raw) return {};
+
+  try {
+    const user = JSON.parse(raw);
+    if (!user.token) return {};
+
+    return {
+      Authorization: `Bearer ${user.token}`,
+    };
+  } catch {
+    return {};
+  }
 };

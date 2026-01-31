@@ -67,20 +67,35 @@ export const updateOrderStatus = async (req, res) => {
 export const addPayment = async (req, res) => {
   try {
     const order = await Order.findById(req.params.id);
-    if (!order) return res.status(404).json({ message: "Order not found" });
 
-  const payment = await Payment.create({
-    order: order._id,
-    customer: order.customer,
-    amount: Number(req.body.amount),
-    receivedBy: req.user._id,
-  });
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
 
-    order.paidAmount += Number(req.body.amount);
+    if (!order.customer) {
+      return res.status(400).json({
+        message: "This order has no customer linked. Cannot record payment.",
+      });
+    }
+
+    const amount = Number(req.body.amount);
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ message: "Invalid amount" });
+    }
+
+    const payment = await Payment.create({
+      order: order._id,
+      customer: order.customer,
+      amount,
+      receivedBy: req.user._id,
+    });
+
+    order.paidAmount = Number(order.paidAmount || 0) + amount;
     await order.save();
 
-    res.json(order);
+    return res.json({ message: "Payment added", order, payment });
   } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
+    console.error("addPayment error:", error);
+    return res.status(500).json({ message: "Server error", error: error.message });
   }
 };

@@ -1,6 +1,6 @@
 import { useParams } from "react-router-dom";
 import {useEffect, useState } from "react";
-import {API, authHeader } from "../api";
+import {API, authHeader } from "../api.js";
 
 export default function OrderDetails() {
     const { id } = useParams();

@@ -1,34 +1,112 @@
-import { use, useState } from "react";
-import { API } from "../api";
+import { useState } from "react";
+import { API } from "../api.js";
 
 export default function Login({ setUser }) {
-    const [phone, setPhone] = useState("");
-    const [password, setPassword ] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-    const login = async () => {
-        const res = await fetch(`${API}/auth/login`, {
-            method: "POST",
-            headers: { "Content-Type":  "application/json"},
-            body: JSON.stringify({ phone, password }),
-        });
-        const data = await res.json();
-        if(data.token) {
-            localStorage.setItem("token", data.token);
-            localStorage.setItem("user", JSON.stringify(data.user));
-            setUser(data.user);
-        }
-    };
-      return (
-    <div className="h-screen flex items-center justify-center p-4">
-      <div className="bg-white p-6 rounded shadow w-full max-w-sm">
-        <h2 className="text-xl font-bold mb-4">Staff Login</h2>
-        <input className="border p-2 w-full mb-2" placeholder="Phone" onChange={e=>setPhone(e.target.value)} />
-        <input className="border p-2 w-full mb-4" type="password" placeholder="Password" onChange={e=>setPassword(e.target.value)} />
-        <button className="bg-green-600 text-white w-full py-2 rounded" onClick={login}>
-          Login
-        </button>
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      const res = await fetch(`${API}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.message || "Invalid phone or password");
+        return;
+      }
+
+      // ✅ VERY IMPORTANT: merge user + token
+      const savedUser = {
+        ...data.user,
+        token: data.token,
+      };
+
+      localStorage.setItem("user", JSON.stringify(savedUser));
+      setUser(savedUser);
+    } catch (err) {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
+        {/* Header */}
+        <div className="text-center mb-6">
+          <h1 className="text-2xl font-bold text-blue-600">Laundry System</h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Sign in to your account
+          </p>
+        </div>
+
+        {/* Error */}
+        {error && (
+          <div className="bg-red-100 text-red-700 text-sm px-4 py-2 rounded mb-4">
+            {error}
+          </div>
+        )}
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">
+              Phone Number
+            </label>
+            <input
+              type="text"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="09xxxxxxxx"
+              required
+              className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-1">
+              Password
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              required
+              className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className={`w-full py-2 rounded-lg text-white font-semibold transition ${
+              loading
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-blue-600 hover:bg-blue-700"
+            }`}
+          >
+            {loading ? "Signing in..." : "Login"}
+          </button>
+        </form>
+
+        {/* Footer */}
+        <div className="text-center mt-6 text-xs text-gray-400">
+          © {new Date().getFullYear()} Laundry Management System
+        </div>
       </div>
     </div>
   );
-
-};
+}
