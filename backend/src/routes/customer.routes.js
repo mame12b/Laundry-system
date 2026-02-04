@@ -4,7 +4,9 @@ import { protect, allowRoles } from "../middlewares/auth.js";
 
 const router = Router();
 
-router.post("/", protect, allowRoles('Manager') , createCustomer);
 router.get("/", protect, getCustomers);
+
+// ✅ Collector + Manager can create customers
+router.post("/", protect, allowRoles("Collector", "Manager"), createCustomer);
 
 export default router;

@@ -22,9 +22,10 @@ const orderSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-orderSchema.pre("save", function (next) {
-  this.totalAmount = this.items.reduce((sum, i) => sum + i.qty * i.price, 0);
-  next();
+orderSchema.pre("save", function () {
+  this.totalAmount = this.items.reduce(
+    (sum, i) => sum + i.qty * i.price, 0);
+  
 });
 
 export default mongoose.model("Order", orderSchema);

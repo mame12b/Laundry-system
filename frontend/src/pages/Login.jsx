@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { API } from "../api.js";
 
 export default function Login({ setUser }) {
@@ -6,6 +7,15 @@ export default function Login({ setUser }) {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const navigate = useNavigate(); // ✅ ADD THIS
+
+  const redirectByRole = (role) => {
+    const r = (role || "").toUpperCase();
+    if (r === "MANAGER") return "/dashboard";
+    if (r === "CASHIER") return "/payments";
+    return "/orders";
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -26,14 +36,12 @@ export default function Login({ setUser }) {
         return;
       }
 
-      // ✅ VERY IMPORTANT: merge user + token
-      const savedUser = {
-        ...data.user,
-        token: data.token,
-      };
+      const savedUser = { ...data.user, token: data.token };
 
       localStorage.setItem("user", JSON.stringify(savedUser));
       setUser(savedUser);
+
+      navigate(redirectByRole(savedUser.role), { replace: true }); // ✅ ADD THIS
     } catch (err) {
       setError("Network error. Please try again.");
     } finally {
@@ -58,6 +66,8 @@ export default function Login({ setUser }) {
             {error}
           </div>
         )}
+
+
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -101,6 +111,17 @@ export default function Login({ setUser }) {
             {loading ? "Signing in..." : "Login"}
           </button>
         </form>
+
+        {/* Register link */}
+<div className="text-center mt-4 text-sm">
+  <span className="text-gray-600">Don’t have an account?</span>{" "}
+  <Link
+    to="/register"
+    className="text-blue-600 font-medium hover:underline"
+  >
+    Register
+  </Link>
+</div>
 
         {/* Footer */}
         <div className="text-center mt-6 text-xs text-gray-400">

@@ -68,43 +68,42 @@ export default function Payments({ user }) {
 
 const submitPayment = async (e) => {
   e.preventDefault();
-  if (!selectedOrder) return showToast("error", "Please select an order");
-
-  const val = Number(amount);
-  if (!val || val <= 0) return showToast("error", "Enter a valid amount");
-  if (val > maxDue) return showToast("error", `Amount cannot exceed Due (${maxDue})`);
 
   try {
     setSubmitting(true);
 
-const res = await fetch(PAY_ENDPOINT(selectedOrder._id), {
-  method: "POST",
-  headers: { ...authHeader(), "Content-Type": "application/json" },
-  body: JSON.stringify({ amount: val }),
-});
+    const res = await fetch(PAY_ENDPOINT(selectedOrder._id), {
+      method: "POST",
+      headers: { ...authHeader(), "Content-Type": "application/json" },
+      body: JSON.stringify({ amount: Number(amount) }),
+    });
 
-const text = await res.text();
-let data;
-try { data = text ? JSON.parse(text) : {}; } catch { data = { message: text }; }
+    const text = await res.text();
+    let data = {};
+    try {
+      data = text ? JSON.parse(text) : {};
+    } catch {
+      data = { message: text };
+    }
 
-if (!res.ok) {
-  showToast("error", data.message || `Payment failed (${res.status})`);
-  return;
-}
-
-
+    if (!res.ok) {
+      // ✅ show backend error message if exists
+      const msg = data?.error || data?.message || `Request failed (${res.status})`;
+      showToast("error", msg);
+      return;
+    }
 
     showToast("success", "Payment recorded successfully");
     setAmount("");
     setSelectedId("");
     await loadOrders();
   } catch (e) {
-    // This is true network/CORS/backend-down
-    showToast("error", e?.message || "Network error while submitting payment");
+    showToast("error", e?.message || "Network error");
   } finally {
     setSubmitting(false);
   }
 };
+
 
   return (
     <div className="space-y-4">

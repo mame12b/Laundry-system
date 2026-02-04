@@ -1,12 +1,12 @@
 import Order from "../models/Order.model.js";
-import { isValidTransition } from "../utils/orderFlow.js";
+import { isValidTransition, ROLE_NEXT_STATUS } from "../utils/orderFlow.js";
 import Payment from "../models/Payment.model.js"
 
 export const createOrder = async (req, res) => {
   try {
     const payload = {
      customer: req.body.customer,
-      collectedBy: req.body.collectedBy,
+      collectedBy: req.user?.role === "Collector" ? req.user._id : req.body.collectedBy,
       items: req.body.items.map(i => ({
         item: i.item,
         qty: Number(i.qty ?? i.unit),
@@ -27,31 +27,63 @@ export const createOrder = async (req, res) => {
 
 export const getOrders = async (req, res) => {
   try {
-    const orders = await Order.find()
-    .sort({ createdAt: -1 })
-    .populate('customer', "name type")
-    .populate('collectedBy', 'name phone role');
+    const q = {};
+
+    // ✅ if client sends ?mine=1 => only orders collected by logged-in user
+    if (req.query.mine === "1") {
+      q.collectedBy = req.user._id;
+    }
+
+    const orders = await Order.find(q)
+      .sort({ createdAt: -1 })
+      .populate("customer", "name type")
+      .populate("collectedBy", "name phone role");
+
     res.json(orders);
-    } catch (error) {   
-    res.status(500).json({ message: "Server error", error: error.message });    
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
 
 export const getHotelOrders = async (req, res) => {
   const orders =await Order.find({ customer: req.user.customer });
   res.json(orders);
 };
  
+
+
 export const updateOrderStatus = async (req, res) => {
   try {
     const { status } = req.body;
-    const order = await Order.findById(req.params.id);
+    const role = req.user?.role;
 
+    if (!status) {
+      return res.status(400).json({ message: "Status is required" });
+    }
+
+    const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ message: "Order not found" });
 
+    // 🔒 Role-based restriction (Manager bypasses)
+    if (role !== "Manager") {
+      const allowedNext = ROLE_NEXT_STATUS[role];
+
+      if (!allowedNext) {
+        return res.status(403).json({ message: "Role not allowed" });
+      }
+
+      if (status !== allowedNext) {
+        return res.status(403).json({
+          message: `${role} can only move order to ${allowedNext}`,
+        });
+      }
+    }
+
+    // 🔁 Flow validation
     if (!isValidTransition(order.status, status)) {
       return res.status(400).json({
-        message: `Invalid status transition from ${order.status} to ${status}`
+        message: `Invalid transition from ${order.status} to ${status}`,
       });
     }
 
@@ -60,9 +92,12 @@ export const updateOrderStatus = async (req, res) => {
 
     res.json(order);
   } catch (error) {
+    console.error("updateOrderStatus error:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
+
 
 export const addPayment = async (req, res) => {
   try {

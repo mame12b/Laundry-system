@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { API, authHeader } from "../api.js";
 import OrderCard from "../components/OrderCard";
 import Toast from "../components/Toast";
+import { Link } from "react-router-dom";
 
 export default function Orders({ user }) {
   const [orders, setOrders] = useState([]);
@@ -75,12 +76,21 @@ export default function Orders({ user }) {
         onClose={() => setToast({ type: "", message: "" })}
       />
 
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold">Orders</h2>
-        <button className="btn-secondary" onClick={loadOrders}>
-          Refresh
-        </button>
-      </div>
+<div className="flex items-center justify-between">
+  <h2 className="text-lg font-bold">Orders</h2>
+
+  <div className="flex gap-2">
+    {(role === "COLLECTOR" || role === "MANAGER") && (
+      <Link to="/orders/new" className="btn-primary">
+        + Create Order
+      </Link>
+    )}
+
+    <button className="btn-secondary" onClick={loadOrders}>
+      Refresh
+    </button>
+  </div>
+</div>
 
       {loading && (
         <div className="bg-white rounded-lg shadow p-4">
