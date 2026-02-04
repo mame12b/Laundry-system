@@ -9,7 +9,7 @@ export default function DashboardLayout({ user, setUser }) {
   const logout = () => {
     localStorage.clear();
     setUser(null);
-    navigate("/");
+    navigate("/login", { replace: true});
   };
 
   return (
@@ -48,6 +48,7 @@ export default function DashboardLayout({ user, setUser }) {
           </button>
         </div>
       </aside>
+
 
       {/* Main */}
       <div className="flex-1 flex flex-col">

@@ -43,6 +43,14 @@ export default function App() {
           <Route path="orders" element={<Orders user={user} />} />
           <Route path= "orders/new" element= {<CreateOrder user={user} />} />
 
+  <Route
+    path="orders/new"
+    element={
+      <RequireRole user={user} allow={(role) => ["Collector", "Manager"].includes(role)}>
+        <CreateOrder user={user} />
+      </RequireRole>
+    }
+  />
           <Route
             path="payments"
             element={
