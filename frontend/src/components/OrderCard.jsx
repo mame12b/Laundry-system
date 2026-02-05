@@ -15,13 +15,13 @@ export default function OrderCard({ order, user, onUpdated, onToast }) {
 
   const nextStatus = nextStatusMap[order.status];
 
-  // ✅ Which role is allowed to do which NEXT status (same as backend)
+  // Which role is allowed to do which NEXT status (same as backend)
   const roleAllowedNext = {
     COLLECTOR: "RECEIVED",
     WASHER: "WASHING",
     IRONER: "IRONING",
     DRIVER: "DELIVERED",
-    MANAGER: "*", // can do all valid next transitions
+    MANAGER: "*",
   };
 
   const role = (user?.role || "").toUpperCase();
@@ -29,17 +29,15 @@ export default function OrderCard({ order, user, onUpdated, onToast }) {
   const canUpdate = useMemo(() => {
     if (!nextStatus) return false;
     if (!role) return false;
-
     if (role === "MANAGER") return true;
 
     const allowed = roleAllowedNext[role];
     return allowed === nextStatus;
   }, [role, nextStatus]);
 
-  const outstanding = Math.max(
-    Number(order.totalAmount || 0) - Number(order.paidAmount || 0),
-    0
-  );
+  const total = Number(order.totalAmount || 0);
+  const paid = Number(order.paidAmount || 0);
+  const due = Math.max(total - paid, 0);
 
   const updateStatus = async () => {
     if (!nextStatus || updating) return;
@@ -75,47 +73,67 @@ export default function OrderCard({ order, user, onUpdated, onToast }) {
   };
 
   return (
-    <div className="bg-white p-3 rounded shadow mb-2 transition-all hover:shadow-md">
+    <div className="bg-white rounded-xl shadow p-4 sm:p-5 transition hover:shadow-md">
+      {/* Top */}
       <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-semibold">
+        <div className="min-w-0">
+          <p className="text-sm sm:text-base font-semibold truncate">
             Customer: {order.customer?.name || "—"}
           </p>
-          <p className="text-xs text-gray-500">Status: {order.status}</p>
+          <p className="text-xs sm:text-sm text-gray-500">
+            Status: <span className="font-medium text-gray-700">{order.status}</span>
+          </p>
+          {order._id && (
+            <p className="text-[11px] sm:text-xs text-gray-400 truncate">
+              Order: {order._id}
+            </p>
+          )}
         </div>
 
         <StatusBadge status={order.status} />
       </div>
 
-      <div className="text-sm flex flex-wrap gap-3 mt-2">
-        <span>Total: {order.totalAmount}</span>
-        <span>Paid: {order.paidAmount}</span>
-        <span className={outstanding > 0 ? "text-red-600" : "text-green-700"}>
-          Due: {outstanding}
-        </span>
+      {/* Totals */}
+      <div className="mt-3 grid grid-cols-3 gap-2 text-xs sm:text-sm">
+        <Stat label="Total" value={total} />
+        <Stat label="Paid" value={paid} />
+        <Stat
+          label="Due"
+          value={due}
+          valueClass={due > 0 ? "text-red-600" : "text-green-700"}
+        />
       </div>
 
-      {/* ✅ Button only shows if user is allowed */}
+      {/* Actions */}
       {canUpdate && (
         <button
-          className={`mt-3 px-3 py-1 rounded text-white ${
-            updating
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-green-500 hover:bg-green-600"
-          }`}
           onClick={updateStatus}
           disabled={updating}
+          className={`mt-4 w-full sm:w-auto sm:inline-flex sm:px-4 sm:py-2 px-4 py-2 rounded-lg font-semibold text-white transition
+            ${
+              updating
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-green-600 hover:bg-green-700"
+            }`}
         >
           {updating ? "Updating..." : `Mark as ${nextStatus}`}
         </button>
       )}
 
-      {/* Optional: show why user can’t update (nice UX) */}
       {!canUpdate && nextStatus && role && role !== "MANAGER" && (
         <p className="mt-3 text-xs text-gray-400">
-          Next step: <b>{nextStatus}</b> (only allowed role can update)
+          Next step: <span className="font-semibold">{nextStatus}</span> (only allowed role can update)
         </p>
       )}
+    </div>
+  );
+}
+
+function Stat({ label, value, valueClass = "" }) {
+  return (
+    <div className="rounded-lg bg-gray-50 border border-gray-100 p-2">
+      <p className="text-[11px] sm:text-xs text-gray-500">{label}</p>
+      <p className={`text-sm sm:text-base font-semibold ${valueClass}`}>{value}</p>
     </div>
   );
 }
@@ -134,10 +152,12 @@ function StatusBadge({ status }) {
       ? "bg-yellow-100 text-yellow-800"
       : s === "RECEIVED"
       ? "bg-orange-100 text-orange-800"
+      : s === "PICKED"
+      ? "bg-slate-100 text-slate-800"
       : "bg-gray-100 text-gray-800";
 
   return (
-    <span className={`text-xs px-2 py-1 rounded-full font-semibold ${cls}`}>
+    <span className={`shrink-0 text-xs px-2.5 py-1 rounded-full font-semibold ${cls}`}>
       {s}
     </span>
   );

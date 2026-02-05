@@ -32,8 +32,8 @@ export default function App() {
   return (
     <Routes>
       {/* Public routes */}
-      <Route path="/login" element={<Login setUser={setUser} />} />
-      <Route path="/register" element={<Register />} />
+      <Route path="/login" element={user ? <Navigate to="/" replace /> :  <Login setUser={setUser} />} />
+      <Route path="/register" element={user ? <Navigate to= "/" replace /> : <Register />} />
 
       {/* Protected routes */}
       <Route element={<Protected user={user} />}>
@@ -41,12 +41,11 @@ export default function App() {
           <Route index element={<Home user={user} />} />
           <Route path="dashboard" element={<Dashboard user={user} />} />
           <Route path="orders" element={<Orders user={user} />} />
-          <Route path= "orders/new" element= {<CreateOrder user={user} />} />
 
   <Route
     path="orders/new"
     element={
-      <RequireRole user={user} allow={(role) => ["Collector", "Manager"].includes(role)}>
+      <RequireRole user={user} allow={(role) => ["COLLECTOR", "MANAGER"].includes(role)}>
         <CreateOrder user={user} />
       </RequireRole>
     }
@@ -68,14 +67,7 @@ export default function App() {
               </RequireRole>
             }
           />
-          <Route
-  path="orders/new"
-  element={
-    <RequireRole user={user} allow={(role) => ["Collector","Manager"].includes(role)}>
-      <CreateOrder user={user} />
-    </RequireRole>
-  }
-/>
+
           <Route path="orders/:id" element={<OrderDetails user={user} />} />
         </Route>
       </Route>

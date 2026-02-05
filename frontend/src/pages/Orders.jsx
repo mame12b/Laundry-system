@@ -56,10 +56,8 @@ export default function Orders({ user }) {
 
   const visibleOrders = useMemo(() => {
     if (!Array.isArray(orders)) return [];
-
     if (!role) return orders;
 
-    // Must match schema statuses: PICKED, RECEIVED, WASHING, IRONING, READY, DELIVERED
     if (role === "WASHER") return orders.filter((o) => o.status === "RECEIVED");
     if (role === "IRONER") return orders.filter((o) => o.status === "WASHING");
     if (role === "DRIVER") return orders.filter((o) => o.status === "READY");
@@ -67,54 +65,79 @@ export default function Orders({ user }) {
     return orders;
   }, [orders, role]);
 
+  const canCreate = role === "COLLECTOR" || role === "MANAGER";
+
   return (
-    <div className="space-y-3">
-      {/* ✅ Toast must be INSIDE return */}
+    <div className="space-y-4">
       <Toast
         type={toast.type}
         message={toast.message}
         onClose={() => setToast({ type: "", message: "" })}
       />
 
-<div className="flex items-center justify-between">
-  <h2 className="text-lg font-bold">Orders</h2>
+      {/* Header */}
+      <div className="bg-white rounded-xl shadow p-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold">Orders</h1>
+            <p className="text-xs sm:text-sm text-gray-500">
+              Showing {visibleOrders.length} order(s)
+            </p>
+          </div>
 
-  <div className="flex gap-2">
-    {(role === "COLLECTOR" || role === "MANAGER") && (
-      <Link to="/orders/new" className="btn-primary">
-        + Create Order
-      </Link>
-    )}
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            {canCreate && (
+              <Link
+                to="/orders/new"
+                className="w-full sm:w-auto inline-flex items-center justify-center rounded-lg px-4 py-2 font-semibold text-white bg-blue-600 hover:bg-blue-700 transition"
+              >
+                + Create Order
+              </Link>
+            )}
 
-    <button className="btn-secondary" onClick={loadOrders}>
-      Refresh
-    </button>
-  </div>
-</div>
+            <button
+              onClick={loadOrders}
+              className="w-full sm:w-auto inline-flex items-center justify-center rounded-lg px-4 py-2 font-semibold text-white bg-green-600 hover:bg-green-700 transition"
+            >
+              Refresh
+            </button>
+          </div>
+        </div>
+      </div>
 
+      {/* States */}
       {loading && (
-        <div className="bg-white rounded-lg shadow p-4">
+        <div className="bg-white rounded-xl shadow p-4">
           <p className="text-gray-600 text-sm">Loading orders...</p>
         </div>
       )}
 
-      {!loading && error && <p className="text-red-500 text-sm">{error}</p>}
-
-      {!loading && !error && visibleOrders.length === 0 && (
-        <p className="text-sm text-gray-500">No orders available</p>
+      {!loading && error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 text-sm">
+          {error}
+        </div>
       )}
 
-      {!loading &&
-        !error &&
-        visibleOrders.map((order) => (
-          <OrderCard
-            key={order._id}
-            order={order}
-            user={user}
-            onUpdated={loadOrders}
-            onToast={showToast}   // ✅ give OrderCard access to toast
-          />
-        ))}
+      {!loading && !error && visibleOrders.length === 0 && (
+        <div className="bg-white rounded-xl shadow p-4">
+          <p className="text-sm text-gray-500">No orders available</p>
+        </div>
+      )}
+
+      {/* List */}
+      {!loading && !error && visibleOrders.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          {visibleOrders.map((order) => (
+            <OrderCard
+              key={order._id}
+              order={order}
+              user={user}
+              onUpdated={loadOrders}
+              onToast={showToast}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
