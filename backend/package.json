@@ -1,7 +1,14 @@
 {
+  "name": "laundry-backend",
+  "version": "1.0.0",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "nodemon src/server.js",
-    "start": "node src/server.js"
+    "start": "node src/server.js",
+    "check": "find src -name '*.js' | xargs node --check && echo 'Syntax OK'"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
