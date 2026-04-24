@@ -17,23 +17,28 @@ import express from "express";
 import {
   createOrder,
   getOrders,
+  getOrderById,
   getHotelOrders,
   updateOrderStatus,
+  addPayment,
+  assignOrder,
 } from "../controllers/order.controller.js";
 import { protect, allowRoles } from "../middlewares/auth.js";
 
 const router = express.Router();
 
-// Manager/Cashier/Staff can see orders
-router.get("/", protect, allowRoles("Manager", "Cashier", "Collector", "Washer", "Ironer", "Driver"), getOrders);
+// Remove this duplicate route that's causing the error
+// router.get("/", authHeader, (req, res) => {
+//   res.json({orders: []});
+// }); 
 
-// Hotel sees ONLY its orders
+// Keep only this route for getting orders
+router.get("/", protect, allowRoles("Manager","Cashier","Collector","Washer","Sorter","Ironer","Driver"), getOrders);
 router.get("/hotel", protect, allowRoles("Hotel"), getHotelOrders);
-
-// Create order: Collector + Manager
-router.post("/", protect, allowRoles("Collector", "Manager"), createOrder);
-
-// Update status: operational roles + manager
-router.patch("/:id/status", protect, allowRoles("Manager", "Collector", "Washer", "Ironer", "Driver"), updateOrderStatus);
+router.get("/:id", protect, allowRoles("Manager","Cashier","Collector","Washer","Sorter","Ironer","Driver"), getOrderById);
+router.post("/", protect, allowRoles("Collector","Manager"), createOrder);
+router.patch("/:id/assign", protect, allowRoles("Manager"), assignOrder);
+router.patch("/:id/status", protect, allowRoles("Manager","Collector","Washer","Sorter","Ironer","Driver"), updateOrderStatus);
+router.post("/:id/payment", protect, allowRoles("Cashier","Manager"), addPayment);
 
 export default router;

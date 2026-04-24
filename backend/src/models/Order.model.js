@@ -18,6 +18,14 @@ const orderSchema = new mongoose.Schema(
     items: { type: [orderItemSchema], required: true },
     totalAmount: { type: Number, default: 0 },
     paidAmount: { type: Number, default: 0 },
+    //  Assignment
+    assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+    assignedRole: { type: String, default: null },
+
+
+  // optional audit
+  assignedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User",  default: null},
+  assignedAt: { type: Date,  default: null },
   },
   { timestamps: true }
 );

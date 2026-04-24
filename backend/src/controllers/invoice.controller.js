@@ -59,3 +59,11 @@ const end = new Date(Date.UTC(year, month, 1));
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+export const getInvoices = async (req, res) => {
+  try {
+    const invoices = await Invoice.find().sort({ createdAt: -1 }).populate("customer", "name type");
+    res.json(invoices);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};

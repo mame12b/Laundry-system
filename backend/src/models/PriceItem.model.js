@@ -1,9 +1,9 @@
 import mongoose from "mongoose";
 
 const priceItemSchema = new mongoose.Schema({
-    itemName: { type: String, required: true },
+    name: { type: String, required: true },        // unified field name
     pricePerUnit: { type: Number, required: true },
-    unit: { type: String, required: true },
+    unit: { type: String, required: true, default: "pc" },
     active: { type: Boolean, default: true },
 }, { timestamps: true }
 );

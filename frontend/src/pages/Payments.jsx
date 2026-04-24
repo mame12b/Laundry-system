@@ -113,11 +113,23 @@ const submitPayment = async (e) => {
         onClose={() => setToast({ type: "", message: "" })}
       />
 
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Payments</h1>
-        <button className="btn-secondary" onClick={loadOrders}>
-          Refresh
-        </button>
+      {/* Header (responsive) */}
+      <div className="bg-white rounded-xl shadow p-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold">Payments</h1>
+            <p className="text-xs sm:text-sm text-gray-500">
+              Record payments for outstanding orders
+            </p>
+          </div>
+
+          <button
+            className="w-full sm:w-auto inline-flex items-center justify-center rounded-lg px-4 py-2 font-semibold text-white bg-green-600 hover:bg-green-700 transition"
+            onClick={loadOrders}
+          >
+            Refresh
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -125,7 +137,7 @@ const submitPayment = async (e) => {
         <div className="lg:col-span-2 bg-white rounded-xl shadow p-4">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-semibold">Outstanding Orders</h2>
-            <span className="text-sm text-gray-500">
+            <span className="text-xs sm:text-sm text-gray-500">
               {dueOrders.length} order(s)
             </span>
           </div>
@@ -144,22 +156,27 @@ const submitPayment = async (e) => {
                 key={o._id}
                 onClick={() => {
                   setSelectedId(o._id);
-                  setAmount(String(o.due)); // auto-fill full due (nice UX)
+                  setAmount(String(o.due));
                 }}
-                className={`w-full text-left border rounded-lg p-3 hover:bg-gray-50 transition ${
-                  selectedId === o._id ? "border-blue-600 bg-blue-50" : "border-gray-200"
+                className={`w-full text-left border rounded-lg p-3 transition ${
+                  selectedId === o._id
+                    ? "border-blue-600 bg-blue-50"
+                    : "border-gray-200 hover:bg-gray-50"
                 }`}
               >
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="font-semibold text-sm">
+                {/* Mobile-friendly row: stacks on very small screens */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-sm truncate">
                       {o.customer?.name || "Unknown Customer"}
                     </p>
                     <p className="text-xs text-gray-500">
-                      Status: {o.status} • Order: {o._id.slice(-6)}
+                      Status: {o.status} • Order:{" "}
+                      <span className="font-medium">{o._id.slice(-6)}</span>
                     </p>
                   </div>
-                  <div className="text-right">
+
+                  <div className="text-left sm:text-right">
                     <p className="text-sm font-bold text-red-600">
                       Due: {o.due}
                     </p>
@@ -183,7 +200,9 @@ const submitPayment = async (e) => {
             </p>
           ) : (
             <div className="mb-3 text-sm">
-              <p className="font-semibold">{selectedOrder.customer?.name}</p>
+              <p className="font-semibold truncate">
+                {selectedOrder.customer?.name}
+              </p>
               <p className="text-gray-500 text-xs">
                 Total: {selectedOrder.totalAmount} • Paid: {selectedOrder.paidAmount}
               </p>
@@ -203,18 +222,19 @@ const submitPayment = async (e) => {
                 placeholder="Enter amount"
                 className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
+
               {selectedOrder && (
-                <div className="flex gap-2 mt-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
                   <button
                     type="button"
-                    className="btn-secondary"
+                    className="w-full inline-flex items-center justify-center rounded-lg px-4 py-2 font-semibold text-white bg-green-600 hover:bg-green-700 transition"
                     onClick={() => setAmount(String(maxDue))}
                   >
                     Pay Full
                   </button>
                   <button
                     type="button"
-                    className="btn-secondary"
+                    className="w-full inline-flex items-center justify-center rounded-lg px-4 py-2 font-semibold text-white bg-gray-600 hover:bg-gray-700 transition"
                     onClick={() => setAmount("")}
                   >
                     Clear
@@ -229,7 +249,7 @@ const submitPayment = async (e) => {
               className={`w-full py-2 rounded-lg text-white font-semibold transition ${
                 !selectedOrder || submitting
                   ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-green-600 hover:bg-green-700"
+                  : "bg-blue-600 hover:bg-blue-700"
               }`}
             >
               {submitting ? "Saving..." : "Save Payment"}
@@ -244,3 +264,5 @@ const submitPayment = async (e) => {
     </div>
   );
 }
+
+

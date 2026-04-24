@@ -13,29 +13,24 @@ export function normalizeRole(role) {
   return String(role || "").trim().toUpperCase();
 }
 
-/* Sidebar / page access */
 export const canAccess = {
   home: () => true,
-  dashboard: (role) =>
-    [ROLES.MANAGER, ROLES.CASHIER, ROLES.COLLECTOR].includes(role),
-
+  dashboard: (role) => [ROLES.MANAGER, ROLES.CASHIER, ROLES.COLLECTOR].includes(role),
   orders: () => true,
-
-  payments: (role) =>
-    [ROLES.CASHIER, ROLES.MANAGER].includes(role),
-
-  reports: (role) =>
-    [ROLES.MANAGER].includes(role),
+  payments: (role) => [ROLES.CASHIER, ROLES.MANAGER].includes(role),
+  reports: (role) => [ROLES.MANAGER].includes(role),
+  prices: (role) => [ROLES.MANAGER].includes(role),
+  customers: (role) => [ROLES.MANAGER, ROLES.COLLECTOR].includes(role),
+  users: (role) => [ROLES.MANAGER].includes(role),
+  invoices: (role) => [ROLES.MANAGER, ROLES.CASHIER].includes(role),
 };
 
-/* Order status permissions */
 export function canUpdateOrderStatus(role, currentStatus) {
   if (role === ROLES.MANAGER) return true;
-
   if (role === ROLES.COLLECTOR && currentStatus === "PICKED") return true;
   if (role === ROLES.WASHER && currentStatus === "RECEIVED") return true;
-  if (role === ROLES.IRONER && currentStatus === "WASHING") return true;
+  if (role === ROLES.SORTER && currentStatus === "WASHING") return true;
+  if (role === ROLES.IRONER && currentStatus === "IRONING") return true;
   if (role === ROLES.DRIVER && currentStatus === "READY") return true;
-
   return false;
 }

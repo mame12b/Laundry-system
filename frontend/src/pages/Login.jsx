@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { API } from "../api.js";
 
+
 export default function Login({ setUser }) {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
@@ -42,12 +43,13 @@ export default function Login({ setUser }) {
       setUser(savedUser);
 
       navigate(redirectByRole(savedUser.role), { replace: true }); // ✅ ADD THIS
-    } catch (err) {
+    } catch (error) {
       setError("Network error. Please try again.");
     } finally {
       setLoading(false);
     }
   };
+  JSON.parse(localStorage.getItem("user"))
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">

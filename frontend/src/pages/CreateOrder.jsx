@@ -71,7 +71,7 @@ export default function CreateOrder({ user }) {
   const totalPreview = useMemo(() => {
     return rows.reduce((sum, r) => {
       const it = priceMap.get(r.itemId);
-      const unitPrice = Number(it?.price || 0);
+      const unitPrice = Number(it?.pricePerUnit || 0);
       const qty = Number(r.qty || 0);
       return sum + unitPrice * qty;
     }, 0);
@@ -139,7 +139,7 @@ export default function CreateOrder({ user }) {
       return {
         item: r.itemId,
         qty: r.qty,
-        price: Number(it?.price || 0),
+        price: Number(it?.pricePerUnit || 0),
       };
     });
 
@@ -256,7 +256,7 @@ export default function CreateOrder({ user }) {
                       <option value="">Select item...</option>
                       {prices.map((p) => (
                         <option key={p._id} value={p._id}>
-                          {p.name} — {p.price}
+                          {p.name} — {p.pricePerUnit}
                         </option>
                       ))}
                     </select>
@@ -277,7 +277,7 @@ export default function CreateOrder({ user }) {
                     <div className="text-sm text-gray-600">
                       {it ? (
                         <span>
-                          Unit: <b>{it.price}</b>
+                          Unit: <b>{it.pricePerUnit}</b>
                         </span>
                       ) : (
                         <span>—</span>

@@ -1,11 +1,11 @@
-import express  from "express";
-import { generateInvoice,  downloadInvoicePdf } from "../controllers/invoice.controller.js";
-import { allowRoles, protect } from "../middlewares/auth.js";
+import { Router } from "express";
+import { generateInvoice, downloadInvoicePdf, getInvoices } from "../controllers/invoice.controller.js";
+import { protect, allowRoles } from "../middlewares/auth.js";
 
-const router = express.Router();
+const router = Router();
 
-router.post("/generate", protect, generateInvoice);
-router.get("/:id/pdf", protect, allowRoles("Manager", "Hotel"), downloadInvoicePdf);
-
+router.get("/", protect, allowRoles("Manager","Cashier"), getInvoices);
+router.post("/", protect, allowRoles("Manager","Cashier"), generateInvoice);
+router.get("/:id/pdf", protect, downloadInvoicePdf);
 
 export default router;

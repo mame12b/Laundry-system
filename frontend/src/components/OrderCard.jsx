@@ -1,10 +1,54 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { API, authHeader } from "../api";
 
 export default function OrderCard({ order, user, onUpdated, onToast }) {
   const [updating, setUpdating] = useState(false);
+  const [staff, setStaff] = useState([]);
+  const [assigning, setAssigning] = useState(false);
 
-  // status flow (must match backend enum)
+  const role = (user?.role || "").toUpperCase();
+  const isManager = role === "MANAGER";
+
+  useEffect(() => {
+    if (!isManager) return;
+
+    (async () => {
+      try {
+        const res = await fetch(`${API}/users/staff`, { headers: { ...authHeader() } });
+        const data = await res.json();
+        if (res.ok) setStaff(Array.isArray(data) ? data : []);
+      } catch {}
+    })();
+  }, [isManager]);
+
+  const assign = async (userId) => {
+    if (!userId) return;
+    try {
+      setAssigning(true);
+
+      const res = await fetch(`${API}/orders/${order._id}/assign`, {
+        method: "PATCH",
+        headers: { ...authHeader(), "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      });
+
+      const text = await res.text();
+      const data = safeJson(text);
+
+      if (!res.ok) {
+        throw new Error(data?.message || "Assign failed");
+      }
+
+      onToast?.("success", "Order assigned");
+      await onUpdated?.();
+    } catch (e) {
+      onToast?.("error", e.message || "Assign failed");
+    } finally {
+      setAssigning(false);
+    }
+  };
+
+  // status flow
   const nextStatusMap = {
     PICKED: "RECEIVED",
     RECEIVED: "WASHING",
@@ -12,56 +56,38 @@ export default function OrderCard({ order, user, onUpdated, onToast }) {
     IRONING: "READY",
     READY: "DELIVERED",
   };
-
   const nextStatus = nextStatusMap[order.status];
 
-  // Which role is allowed to do which NEXT status (same as backend)
   const roleAllowedNext = {
     COLLECTOR: "RECEIVED",
     WASHER: "WASHING",
-    IRONER: "IRONING",
+    SORTER: "IRONING",
+    IRONER: "READY",
     DRIVER: "DELIVERED",
     MANAGER: "*",
   };
 
-  const role = (user?.role || "").toUpperCase();
-
   const canUpdate = useMemo(() => {
-    if (!nextStatus) return false;
-    if (!role) return false;
+    if (!nextStatus || !role) return false;
     if (role === "MANAGER") return true;
-
-    const allowed = roleAllowedNext[role];
-    return allowed === nextStatus;
+    return roleAllowedNext[role] === nextStatus;
   }, [role, nextStatus]);
-
-  const total = Number(order.totalAmount || 0);
-  const paid = Number(order.paidAmount || 0);
-  const due = Math.max(total - paid, 0);
 
   const updateStatus = async () => {
     if (!nextStatus || updating) return;
 
     try {
       setUpdating(true);
-
       const res = await fetch(`${API}/orders/${order._id}/status`, {
         method: "PATCH",
         headers: { ...authHeader(), "Content-Type": "application/json" },
         body: JSON.stringify({ status: nextStatus }),
       });
 
-      if (!res.ok) {
-        let msg = "Failed to update status";
-        try {
-          const err = await res.json();
-          msg = err.message || msg;
-        } catch {
-          const txt = await res.text();
-          if (txt) msg = txt;
-        }
-        throw new Error(msg);
-      }
+      const text = await res.text();
+      const data = safeJson(text);
+
+      if (!res.ok) throw new Error(data?.message || "Failed to update status");
 
       onToast?.("success", `Order updated to ${nextStatus}`);
       await onUpdated?.();
@@ -72,49 +98,76 @@ export default function OrderCard({ order, user, onUpdated, onToast }) {
     }
   };
 
+  const outstanding = Math.max(
+    Number(order.totalAmount || 0) - Number(order.paidAmount || 0),
+    0
+  );
+
   return (
-    <div className="bg-white rounded-xl shadow p-4 sm:p-5 transition hover:shadow-md">
-      {/* Top */}
+    <div className="bg-white rounded-2xl shadow p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-sm sm:text-base font-semibold truncate">
+          <p className="text-sm font-semibold truncate">
             Customer: {order.customer?.name || "—"}
           </p>
-          <p className="text-xs sm:text-sm text-gray-500">
-            Status: <span className="font-medium text-gray-700">{order.status}</span>
+          <p className="text-xs text-gray-500">
+            Status: {order.status} • #{order._id?.slice(-6)}
           </p>
-          {order._id && (
-            <p className="text-[11px] sm:text-xs text-gray-400 truncate">
-              Order: {order._id}
-            </p>
-          )}
+
+          <p className="text-xs text-gray-500 mt-1">
+            Assigned:{" "}
+            <b>
+              {order.assignedTo?.name
+                ? `${order.assignedTo.name} (${order.assignedTo.role})`
+                : "Not assigned"}
+            </b>
+          </p>
         </div>
 
         <StatusBadge status={order.status} />
       </div>
 
-      {/* Totals */}
-      <div className="mt-3 grid grid-cols-3 gap-2 text-xs sm:text-sm">
-        <Stat label="Total" value={total} />
-        <Stat label="Paid" value={paid} />
-        <Stat
-          label="Due"
-          value={due}
-          valueClass={due > 0 ? "text-red-600" : "text-green-700"}
-        />
+      <div className="text-sm flex flex-wrap gap-3 mt-3">
+        <span>Total: {order.totalAmount}</span>
+        <span>Paid: {order.paidAmount}</span>
+        <span className={outstanding > 0 ? "text-red-600" : "text-green-700"}>
+          Due: {outstanding}
+        </span>
       </div>
 
-      {/* Actions */}
+      {/* ✅ Manager assignment */}
+      {isManager && (
+        <div className="mt-3 flex flex-col sm:flex-row gap-2">
+          <select
+            className="w-full sm:w-auto border rounded-lg px-3 py-2 text-sm"
+            defaultValue=""
+            onChange={(e) => assign(e.target.value)}
+            disabled={assigning}
+          >
+            <option value="" disabled>
+              {assigning ? "Assigning..." : "Assign to staff..."}
+            </option>
+            {staff.map((u) => (
+              <option key={u._id} value={u._id}>
+                {u.name} — {u.role}
+              </option>
+            ))}
+          </select>
+
+          <span className="text-xs text-gray-400 self-center">
+            Tip: order will appear in that staff queue.
+          </span>
+        </div>
+      )}
+
+      {/* ✅ Status update button */}
       {canUpdate && (
         <button
+          className={`mt-3 w-full sm:w-auto px-4 py-2 rounded-lg text-white font-semibold ${
+            updating ? "bg-gray-400" : "bg-green-600 hover:bg-green-700"
+          }`}
           onClick={updateStatus}
           disabled={updating}
-          className={`mt-4 w-full sm:w-auto sm:inline-flex sm:px-4 sm:py-2 px-4 py-2 rounded-lg font-semibold text-white transition
-            ${
-              updating
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-green-600 hover:bg-green-700"
-            }`}
         >
           {updating ? "Updating..." : `Mark as ${nextStatus}`}
         </button>
@@ -122,25 +175,15 @@ export default function OrderCard({ order, user, onUpdated, onToast }) {
 
       {!canUpdate && nextStatus && role && role !== "MANAGER" && (
         <p className="mt-3 text-xs text-gray-400">
-          Next step: <span className="font-semibold">{nextStatus}</span> (only allowed role can update)
+          Next step: <b>{nextStatus}</b> (only allowed role can update)
         </p>
       )}
     </div>
   );
 }
 
-function Stat({ label, value, valueClass = "" }) {
-  return (
-    <div className="rounded-lg bg-gray-50 border border-gray-100 p-2">
-      <p className="text-[11px] sm:text-xs text-gray-500">{label}</p>
-      <p className={`text-sm sm:text-base font-semibold ${valueClass}`}>{value}</p>
-    </div>
-  );
-}
-
 function StatusBadge({ status }) {
   const s = (status || "").toUpperCase();
-
   const cls =
     s === "DELIVERED"
       ? "bg-green-100 text-green-800"
@@ -152,13 +195,19 @@ function StatusBadge({ status }) {
       ? "bg-yellow-100 text-yellow-800"
       : s === "RECEIVED"
       ? "bg-orange-100 text-orange-800"
-      : s === "PICKED"
-      ? "bg-slate-100 text-slate-800"
       : "bg-gray-100 text-gray-800";
 
   return (
-    <span className={`shrink-0 text-xs px-2.5 py-1 rounded-full font-semibold ${cls}`}>
+    <span className={`text-xs px-2 py-1 rounded-full font-semibold ${cls}`}>
       {s}
     </span>
   );
+}
+
+function safeJson(text) {
+  try {
+    return text ? JSON.parse(text) : {};
+  } catch {
+    return { message: text };
+  }
 }
