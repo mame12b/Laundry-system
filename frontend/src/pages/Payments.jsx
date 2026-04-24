@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { API, authHeader } from "../api.js";
+import { API, apiFetch } from "../api.js";
 import Toast from "../components/Toast";
 
 // ✅ Change this if your route is different:
@@ -23,9 +23,7 @@ export default function Payments({ user }) {
     try {
       setLoadingOrders(true);
 
-      const res = await fetch(`${API}/orders`, {
-        headers: { ...authHeader() },
-      });
+      const res = await apiFetch(`${API}/orders`);
 
       const data = await res.json();
       if (!res.ok) {
@@ -72,9 +70,9 @@ const submitPayment = async (e) => {
   try {
     setSubmitting(true);
 
-    const res = await fetch(PAY_ENDPOINT(selectedOrder._id), {
+    const res = await apiFetch(PAY_ENDPOINT(selectedOrder._id), {
       method: "POST",
-      headers: { ...authHeader(), "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ amount: Number(amount) }),
     });
 

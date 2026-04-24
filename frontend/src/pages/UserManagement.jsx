@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { API, authHeader } from "../api";
+import { API, apiFetch } from "../api";
 import Toast from "../components/Toast";
 import {
   FiUserPlus, FiX, FiCopy, FiCheck, FiLock,
@@ -45,7 +45,7 @@ export default function UserManagement() {
   const load = async () => {
     try {
       setLoading(true);
-      const res  = await fetch(`${API}/users`, { headers: authHeader() });
+      const res  = await apiFetch(`${API}/users`);
       const data = await res.json();
       setUsers(Array.isArray(data) ? data : []);
     } catch {
@@ -68,9 +68,9 @@ export default function UserManagement() {
 
     try {
       setSubmitting(true);
-      const res = await fetch(`${API}/users`, {
+      const res = await apiFetch(`${API}/users`, {
         method: "POST",
-        headers: { ...authHeader(), "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...form, name: form.name.trim(), phone: form.phone.trim(), password: pin }),
       });
       const data = await res.json();
@@ -89,10 +89,7 @@ export default function UserManagement() {
 
   const toggleActive = async (u) => {
     try {
-      const res = await fetch(`${API}/users/${u._id}/toggle`, {
-        method: "PATCH",
-        headers: authHeader(),
-      });
+      const res = await apiFetch(`${API}/users/${u._id}/toggle`, { method: "PATCH" });
       if (!res.ok) throw new Error("Failed");
       showToast("success", u.active ? "User deactivated" : "User activated");
       load();

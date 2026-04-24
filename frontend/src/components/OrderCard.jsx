@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { API, authHeader } from "../api";
+import { API, apiFetch } from "../api";
 
 export default function OrderCard({ order, user, onUpdated, onToast }) {
   const [updating, setUpdating] = useState(false);
@@ -14,7 +14,7 @@ export default function OrderCard({ order, user, onUpdated, onToast }) {
 
     (async () => {
       try {
-        const res = await fetch(`${API}/users/staff`, { headers: { ...authHeader() } });
+        const res = await apiFetch(`${API}/users/staff`);
         const data = await res.json();
         if (res.ok) setStaff(Array.isArray(data) ? data : []);
       } catch {}
@@ -26,9 +26,9 @@ export default function OrderCard({ order, user, onUpdated, onToast }) {
     try {
       setAssigning(true);
 
-      const res = await fetch(`${API}/orders/${order._id}/assign`, {
+      const res = await apiFetch(`${API}/orders/${order._id}/assign`, {
         method: "PATCH",
-        headers: { ...authHeader(), "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId }),
       });
 
@@ -78,9 +78,9 @@ export default function OrderCard({ order, user, onUpdated, onToast }) {
 
     try {
       setUpdating(true);
-      const res = await fetch(`${API}/orders/${order._id}/status`, {
+      const res = await apiFetch(`${API}/orders/${order._id}/status`, {
         method: "PATCH",
-        headers: { ...authHeader(), "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: nextStatus }),
       });
 

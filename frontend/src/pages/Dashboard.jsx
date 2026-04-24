@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { API, authHeader } from "../api.js";
+import { API, apiFetch } from "../api.js";
 import Toast from "../components/Toast";
 import {
   FiPackage, FiDollarSign, FiTrendingUp, FiCheckCircle,
@@ -52,7 +52,7 @@ export default function Dashboard({ user }) {
       silent ? setRefreshing(true) : setLoading(true);
 
       const reqs = [
-        fetch(`${API}/orders`, { headers: authHeader() }).then(async r => {
+        apiFetch(`${API}/orders`).then(async r => {
           const j = await r.json().catch(() => []);
           if (!r.ok) throw new Error(j?.message || "Orders failed");
           return Array.isArray(j) ? j : [];
@@ -61,7 +61,7 @@ export default function Dashboard({ user }) {
 
       if (isManager) {
         reqs.push(
-          fetch(`${API}/reports/summary`, { headers: authHeader() }).then(async r => {
+          apiFetch(`${API}/reports/summary`).then(async r => {
             const j = await r.json().catch(() => ({}));
             if (!r.ok) throw new Error(j?.message || "Reports failed");
             return j;

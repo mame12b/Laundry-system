@@ -10,8 +10,8 @@ export const createCustomer = async (req, res) => {
     }
     const customer = await Customer.create({
       name: name.trim(),
-      phone: phone?.trim() || "",
-      type: type || "Regular",
+      phone: phone?.trim() || null,
+      type: type || "Individual",
       address: address?.trim() || "",
     });
     res.status(201).json(customer);

@@ -16,3 +16,21 @@ export const authHeader = () => {
     return {};
   }
 };
+
+export const apiFetch = async (url, options = {}) => {
+  const res = await fetch(url, {
+    ...options,
+    headers: {
+      ...authHeader(),
+      ...options.headers,
+    },
+  });
+
+  if (res.status === 401) {
+    localStorage.removeItem("user");
+    window.location.href = "/login";
+    return res;
+  }
+
+  return res;
+};

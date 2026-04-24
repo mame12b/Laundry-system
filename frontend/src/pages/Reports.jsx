@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { API, authHeader } from "../api";
+import { API, apiFetch } from "../api";
 import Toast from "../components/Toast";
 import {
   FiRefreshCw, FiCalendar, FiPackage, FiCheckCircle,
@@ -52,7 +52,7 @@ export default function Reports() {
       if (from) params.set("from", from);
       if (to)   params.set("to",   to + "T23:59:59");
 
-      const res  = await fetch(`${API}/reports/summary?${params}`, { headers: authHeader() });
+      const res  = await apiFetch(`${API}/reports/summary?${params}`);
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json?.message || `Failed (${res.status})`);
       setData(json);

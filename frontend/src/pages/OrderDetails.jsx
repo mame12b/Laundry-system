@@ -1,6 +1,6 @@
 import { useParams, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { API, authHeader } from "../api.js";
+import { API, apiFetch } from "../api.js";
 import PaymentHistory from "../components/PaymentHistory.jsx";
 
 export default function OrderDetails({ user }) {
@@ -14,9 +14,7 @@ export default function OrderDetails({ user }) {
       setLoading(true);
       setError("");
 
-      const res = await fetch(`${API}/orders/${id}`, {
-        headers: { ...authHeader() },
-      });
+      const res = await apiFetch(`${API}/orders/${id}`);
 
       const text = await res.text();
       let data = {};

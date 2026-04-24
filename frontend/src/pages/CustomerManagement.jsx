@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { API, authHeader } from "../api";
+import { API, apiFetch } from "../api";
 import Toast from "../components/Toast";
 
 const emptyForm = { name: "", phone: "", type: "Regular", address: "" };
@@ -24,7 +24,7 @@ export default function CustomerManagement({ user }) {
   const load = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${API}/customers?all=1`, { headers: authHeader() });
+      const res = await apiFetch(`${API}/customers?all=1`);
       const data = await res.json();
       setCustomers(Array.isArray(data) ? data : []);
     } catch {
@@ -55,9 +55,9 @@ export default function CustomerManagement({ user }) {
       setSubmitting(true);
       const url = editId ? `${API}/customers/${editId}` : `${API}/customers`;
       const method = editId ? "PATCH" : "POST";
-      const res = await fetch(url, {
+      const res = await apiFetch(url, {
         method,
-        headers: { ...authHeader(), "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
       const data = await res.json();
@@ -74,10 +74,7 @@ export default function CustomerManagement({ user }) {
 
   const toggleActive = async (c) => {
     try {
-      const res = await fetch(`${API}/customers/${c._id}/toggle`, {
-        method: "PATCH",
-        headers: authHeader(),
-      });
+      const res = await apiFetch(`${API}/customers/${c._id}/toggle`, { method: "PATCH" });
       if (!res.ok) throw new Error("Failed");
       showToast("success", c.active ? "Customer deactivated" : "Customer activated");
       load();

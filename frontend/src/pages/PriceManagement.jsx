@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { API, authHeader } from "../api";
+import { API, apiFetch } from "../api";
 import Toast from "../components/Toast";
 
 const UNITS = ["pc", "kg", "pair", "set", "shirt", "trouser", "suit", "bag"];
@@ -23,7 +23,7 @@ export default function PriceManagement() {
   const load = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${API}/prices?all=1`, { headers: authHeader() });
+      const res = await apiFetch(`${API}/prices?all=1`);
       const data = await res.json();
       setItems(Array.isArray(data) ? data : []);
     } catch {
@@ -36,7 +36,11 @@ export default function PriceManagement() {
   useEffect(() => { load(); }, []);
 
   const openEdit = (item) => {
-    setForm({ name: item.name, pricePerUnit: item.pricePerUnit, unit: item.unit });
+    setForm({
+      name: item.name || "",
+      pricePerUnit: item.pricePerUnit ?? "",
+      unit: UNITS.includes(item.unit) ? item.unit : "pc",
+    });
     setEditId(item._id);
     setShowForm(true);
   };
@@ -56,9 +60,9 @@ export default function PriceManagement() {
       setSubmitting(true);
       const url = editId ? `${API}/prices/${editId}` : `${API}/prices`;
       const method = editId ? "PATCH" : "POST";
-      const res = await fetch(url, {
+      const res = await apiFetch(url, {
         method,
-        headers: { ...authHeader(), "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...form, pricePerUnit: Number(form.pricePerUnit) }),
       });
       const data = await res.json();
@@ -75,9 +79,9 @@ export default function PriceManagement() {
 
   const toggleActive = async (item) => {
     try {
-      const res = await fetch(`${API}/prices/${item._id}`, {
+      const res = await apiFetch(`${API}/prices/${item._id}`, {
         method: "PATCH",
-        headers: { ...authHeader(), "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ active: !item.active }),
       });
       if (!res.ok) throw new Error("Failed to update");

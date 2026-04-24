@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { API, authHeader } from "../api";
+import { API, apiFetch } from "../api";
 import Toast from "../components/Toast";
 
 export default function Invoices() {
@@ -19,8 +19,8 @@ export default function Invoices() {
     try {
       setLoading(true);
       const [cRes, iRes] = await Promise.all([
-        fetch(`${API}/customers`, { headers: authHeader() }),
-        fetch(`${API}/invoices`, { headers: authHeader() }),
+        apiFetch(`${API}/customers`),
+        apiFetch(`${API}/invoices`),
       ]);
       const [cData, iData] = await Promise.all([cRes.json(), iRes.json()]);
       setCustomers(Array.isArray(cData) ? cData : []);
@@ -40,9 +40,9 @@ export default function Invoices() {
     if (!form.customer || !form.month) return showToast("error", "Select customer and month");
     try {
       setSubmitting(true);
-      const res = await fetch(`${API}/invoices`, {
+      const res = await apiFetch(`${API}/invoices`, {
         method: "POST",
-        headers: { ...authHeader(), "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
       const data = await res.json();
@@ -59,9 +59,7 @@ export default function Invoices() {
 
   const downloadPdf = async (invoiceId) => {
     try {
-      const res = await fetch(`${API}/invoices/${invoiceId}/pdf`, {
-        headers: { ...authHeader() },
-      });
+      const res = await apiFetch(`${API}/invoices/${invoiceId}/pdf`);
       if (!res.ok) {
         const msg = await res.text();
         showToast("error", msg || "Failed to download PDF");

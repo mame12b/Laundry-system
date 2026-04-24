@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { API, authHeader } from "../api.js";
+import { API, apiFetch } from "../api.js";
 import OrderCard from "../components/OrderCard";
 import Toast from "../components/Toast";
 import { Link } from "react-router-dom";
@@ -23,7 +23,7 @@ export default function Orders({ user }) {
     try {
       setLoading(true);
       setError("");
-      const res = await fetch(`${API}/orders`, { headers: authHeader() });
+      const res = await apiFetch(`${API}/orders`);
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.message || "Failed to load orders");

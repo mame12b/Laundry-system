@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { API, authHeader } from "../api";
+import { API, apiFetch } from "../api";
 import Toast from "./Toast";
 
 export default function PaymentHistory({ orderId }) {
@@ -15,9 +15,7 @@ export default function PaymentHistory({ orderId }) {
   const load = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${API}/payments/${orderId}/history`, {
-        headers: { ...authHeader() },
-      });
+      const res = await apiFetch(`${API}/payments/${orderId}/history`);
 
       const data = await res.json();
       if (!res.ok) {
