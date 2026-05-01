@@ -34,24 +34,30 @@ export default function CreateOrder({ user }) {
   const [loading, setLoading]       = useState(false);
   const [submitError, setSubmitError] = useState("");
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const [cRes, pRes] = await Promise.all([
-          apiFetch(`${API}/customers`),
-          apiFetch(`${API}/prices`),
-        ]);
-        const cData = await cRes.json().catch(() => []);
-        const pData = await pRes.json().catch(() => []);
-        if (!cRes.ok) throw new Error(cData.message || "Failed to load customers");
-        if (!pRes.ok) throw new Error(pData.message || "Failed to load prices");
-        setCustomers(Array.isArray(cData) ? cData : []);
-        setPrices(Array.isArray(pData) ? pData : []);
-      } catch (e) {
-        setLoadError(e.message);
-      }
-    })();
-  }, []);
+useEffect(() => {
+  const loadData = async () => {
+    try {
+      const [cRes, pRes] = await Promise.all([
+        apiFetch(`${API}/customers`),
+        apiFetch(`${API}/prices`),
+      ]);
+
+      const cData = await cRes.json().catch(() => []);
+      const pData = await pRes.json().catch(() => []);
+
+      if (!cRes.ok) throw new Error(cData.message || "Failed to load customers");
+      if (!pRes.ok) throw new Error(pData.message || "Failed to load prices");
+
+      setCustomers(Array.isArray(cData) ? cData : []);
+      setPrices(Array.isArray(pData) ? pData : []);
+    } catch (e) {
+      setLoadError(e.message);
+    }
+  };
+
+  loadData();
+}, []);
+
 
   const filteredCustomers = useMemo(() => {
     const q = customerSearch.trim().toLowerCase();

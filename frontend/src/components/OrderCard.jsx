@@ -1,6 +1,24 @@
 import { useEffect, useMemo, useState } from "react";
 import { API, apiFetch } from "../api";
 
+/* ✅ constants OUTSIDE component (stable) */
+const nextStatusMap = {
+  PICKED: "RECEIVED",
+  RECEIVED: "WASHING",
+  WASHING: "IRONING",
+  IRONING: "READY",
+  READY: "DELIVERED",
+};
+
+const roleAllowedNext = {
+  COLLECTOR: "RECEIVED",
+  WASHER: "WASHING",
+  SORTER: "IRONING",
+  IRONER: "READY",
+  DRIVER: "DELIVERED",
+  MANAGER: "*",
+};
+
 export default function OrderCard({ order, user, onUpdated, onToast }) {
   const [updating, setUpdating] = useState(false);
   const [staff, setStaff] = useState([]);
@@ -9,20 +27,37 @@ export default function OrderCard({ order, user, onUpdated, onToast }) {
   const role = (user?.role || "").toUpperCase();
   const isManager = role === "MANAGER";
 
+  /* ✅ load staff */
   useEffect(() => {
     if (!isManager) return;
 
-    (async () => {
+    const loadStaff = async () => {
       try {
         const res = await apiFetch(`${API}/users/staff`);
         const data = await res.json();
         if (res.ok) setStaff(Array.isArray(data) ? data : []);
-      } catch { /* staff list is optional — silently ignore */ }
-    })();
+      } catch {
+        // ignore
+      }
+    };
+
+    loadStaff();
   }, [isManager]);
 
+  /* ✅ next status */
+  const nextStatus = nextStatusMap[order.status];
+
+  /* ✅ permission check */
+  const canUpdate = useMemo(() => {
+    if (!nextStatus || !role) return false;
+    if (role === "MANAGER") return true;
+    return roleAllowedNext[role] === nextStatus;
+  }, [role, nextStatus]);
+
+  /* ✅ assign staff */
   const assign = async (userId) => {
     if (!userId) return;
+
     try {
       setAssigning(true);
 
@@ -35,9 +70,7 @@ export default function OrderCard({ order, user, onUpdated, onToast }) {
       const text = await res.text();
       const data = safeJson(text);
 
-      if (!res.ok) {
-        throw new Error(data?.message || "Assign failed");
-      }
+      if (!res.ok) throw new Error(data?.message || "Assign failed");
 
       onToast?.("success", "Order assigned");
       await onUpdated?.();
@@ -48,36 +81,13 @@ export default function OrderCard({ order, user, onUpdated, onToast }) {
     }
   };
 
-  // status flow
-  const nextStatusMap = {
-    PICKED: "RECEIVED",
-    RECEIVED: "WASHING",
-    WASHING: "IRONING",
-    IRONING: "READY",
-    READY: "DELIVERED",
-  };
-  const nextStatus = nextStatusMap[order.status];
-
-  const roleAllowedNext = {
-    COLLECTOR: "RECEIVED",
-    WASHER: "WASHING",
-    SORTER: "IRONING",
-    IRONER: "READY",
-    DRIVER: "DELIVERED",
-    MANAGER: "*",
-  };
-
-  const canUpdate = useMemo(() => {
-    if (!nextStatus || !role) return false;
-    if (role === "MANAGER") return true;
-    return roleAllowedNext[role] === nextStatus;
-  }, [role, nextStatus]);
-
+  /* ✅ update status */
   const updateStatus = async () => {
     if (!nextStatus || updating) return;
 
     try {
       setUpdating(true);
+
       const res = await apiFetch(`${API}/orders/${order._id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -105,11 +115,13 @@ export default function OrderCard({ order, user, onUpdated, onToast }) {
 
   return (
     <div className="bg-white rounded-2xl shadow p-4">
+      {/* HEADER */}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-sm font-semibold truncate">
             Customer: {order.customer?.name || "—"}
           </p>
+
           <p className="text-xs text-gray-500">
             Status: {order.status} • #{order._id?.slice(-6)}
           </p>
@@ -127,6 +139,7 @@ export default function OrderCard({ order, user, onUpdated, onToast }) {
         <StatusBadge status={order.status} />
       </div>
 
+      {/* PAYMENT INFO */}
       <div className="text-sm flex flex-wrap gap-3 mt-3">
         <span>Total: {order.totalAmount}</span>
         <span>Paid: {order.paidAmount}</span>
@@ -135,7 +148,7 @@ export default function OrderCard({ order, user, onUpdated, onToast }) {
         </span>
       </div>
 
-      {/* ✅ Manager assignment */}
+      {/* MANAGER ASSIGN */}
       {isManager && (
         <div className="mt-3 flex flex-col sm:flex-row gap-2">
           <select
@@ -147,6 +160,7 @@ export default function OrderCard({ order, user, onUpdated, onToast }) {
             <option value="" disabled>
               {assigning ? "Assigning..." : "Assign to staff..."}
             </option>
+
             {staff.map((u) => (
               <option key={u._id} value={u._id}>
                 {u.name} — {u.role}
@@ -160,7 +174,7 @@ export default function OrderCard({ order, user, onUpdated, onToast }) {
         </div>
       )}
 
-      {/* ✅ Status update button */}
+      {/* STATUS BUTTON */}
       {canUpdate && (
         <button
           className={`mt-3 w-full sm:w-auto px-4 py-2 rounded-lg text-white font-semibold ${
@@ -173,17 +187,21 @@ export default function OrderCard({ order, user, onUpdated, onToast }) {
         </button>
       )}
 
-      {!canUpdate && nextStatus && role && role !== "MANAGER" && (
+      {/* INFO MESSAGE */}
+      {!canUpdate && nextStatus && role !== "MANAGER" && (
         <p className="mt-3 text-xs text-gray-400">
-          Next step: <b>{nextStatus}</b> (only allowed role can update)
+          Next step: <b>{nextStatus}</b> (restricted by role)
         </p>
       )}
     </div>
   );
 }
 
+/* ✅ UI helpers */
+
 function StatusBadge({ status }) {
   const s = (status || "").toUpperCase();
+
   const cls =
     s === "DELIVERED"
       ? "bg-green-100 text-green-800"
