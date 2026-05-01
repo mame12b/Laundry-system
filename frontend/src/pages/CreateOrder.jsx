@@ -34,14 +34,6 @@ export default function CreateOrder({ user }) {
   const [loading, setLoading]       = useState(false);
   const [submitError, setSubmitError] = useState("");
 
-  if (role !== "COLLECTOR" && role !== "MANAGER") {
-    return (
-      <div className="bg-white p-6 rounded-xl shadow">
-        <p className="text-red-600 font-semibold">Access denied</p>
-      </div>
-    );
-  }
-
   useEffect(() => {
     (async () => {
       try {
@@ -59,7 +51,6 @@ export default function CreateOrder({ user }) {
         setLoadError(e.message);
       }
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const filteredCustomers = useMemo(() => {
@@ -151,6 +142,14 @@ export default function CreateOrder({ user }) {
       setLoading(false);
     }
   };
+
+  if (role !== "COLLECTOR" && role !== "MANAGER") {
+    return (
+      <div className="bg-white p-6 rounded-xl shadow">
+        <p className="text-red-600 font-semibold">Access denied</p>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-xl mx-auto pb-36 space-y-4">

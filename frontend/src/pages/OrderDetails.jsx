@@ -31,7 +31,7 @@ export default function OrderDetails({ user }) {
       }
 
       setOrder(data);
-    } catch (e) {
+    } catch {
       setError("Network error while loading order");
       setOrder(null);
     } finally {

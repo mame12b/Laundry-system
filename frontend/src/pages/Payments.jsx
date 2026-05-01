@@ -5,7 +5,7 @@ import Toast from "../components/Toast";
 // ✅ Change this if your route is different:
 const PAY_ENDPOINT = (id) => `${API}/payments/${id}`; // <-- update to match your backend route
 
-export default function Payments({ user }) {
+export default function Payments() {
   const [orders, setOrders] = useState([]);
   const [selectedId, setSelectedId] = useState("");
   const [amount, setAmount] = useState("");
@@ -33,7 +33,7 @@ export default function Payments({ user }) {
       }
 
       setOrders(Array.isArray(data) ? data : []);
-    } catch (e) {
+    } catch {
       showToast("error", "Network error while loading orders");
       setOrders([]);
     } finally {

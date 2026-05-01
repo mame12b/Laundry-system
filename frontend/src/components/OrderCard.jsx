@@ -17,7 +17,7 @@ export default function OrderCard({ order, user, onUpdated, onToast }) {
         const res = await apiFetch(`${API}/users/staff`);
         const data = await res.json();
         if (res.ok) setStaff(Array.isArray(data) ? data : []);
-      } catch {}
+      } catch { /* staff list is optional — silently ignore */ }
     })();
   }, [isManager]);
 

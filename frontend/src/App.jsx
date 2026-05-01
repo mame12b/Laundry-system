@@ -52,7 +52,7 @@ export default function App() {
           } />
           <Route path="payments" element={
             <RequireRole user={user} allow={r => canAccess.payments(r)}>
-              <Payments user={user} />
+              <Payments />
             </RequireRole>
           } />
           <Route path="reports" element={
