@@ -68,47 +68,5 @@ jobs:
       - name: Syntax check
         run: npm run check
 
-  # ─────────────────────────────────────────────
-  # Job 3: Deploy Frontend → Vercel (main only)
-  # ─────────────────────────────────────────────
-  deploy-frontend:
-    name: Deploy Frontend (Vercel)
-    runs-on: ubuntu-latest
-    needs: [frontend, backend]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-
-      - name: Install Vercel CLI
-        run: npm install -g vercel@latest
-
-      - name: Deploy to Vercel
-        working-directory: frontend
-        run: vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }} --yes
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-
-  # ─────────────────────────────────────────────
-  # Job 4: Deploy Backend → Render (main only)
-  # ─────────────────────────────────────────────
-  deploy-backend:
-    name: Deploy Backend (Render)
-    runs-on: ubuntu-latest
-    needs: [frontend, backend]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-
-    steps:
-      - name: Trigger Render deploy hook
-        run: |
-          curl -fsSL -X POST "${{ secrets.RENDER_DEPLOY_HOOK }}" \
-            -o /dev/null -w "HTTP status: %{http_code}\n"
+  # Vercel and Render deploy automatically via their own GitHub integrations.
+  # No separate deploy jobs needed here.
