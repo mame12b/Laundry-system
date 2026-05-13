@@ -1,17 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { API, apiFetch } from "../api.js";
 import Toast from "../components/Toast";
+import { useLanguage } from "../context/LanguageContext";
 
-// ✅ Change this if your route is different:
-const PAY_ENDPOINT = (id) => `${API}/payments/${id}`; // <-- update to match your backend route
+const PAY_ENDPOINT = (id) => `${API}/payments/${id}`;
 
 export default function Payments() {
+  const { t } = useLanguage();
   const [orders, setOrders] = useState([]);
   const [selectedId, setSelectedId] = useState("");
   const [amount, setAmount] = useState("");
   const [loadingOrders, setLoadingOrders] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-
   const [toast, setToast] = useState({ type: "", message: "" });
 
   const showToast = (type, message) => {
@@ -22,16 +22,13 @@ export default function Payments() {
   const loadOrders = async () => {
     try {
       setLoadingOrders(true);
-
       const res = await apiFetch(`${API}/orders`);
-
       const data = await res.json();
       if (!res.ok) {
         showToast("error", data?.message || "Failed to load orders");
         setOrders([]);
         return;
       }
-
       setOrders(Array.isArray(data) ? data : []);
     } catch {
       showToast("error", "Network error while loading orders");
@@ -64,68 +61,48 @@ export default function Payments() {
 
   const maxDue = selectedOrder ? Number(selectedOrder.due || 0) : 0;
 
-const submitPayment = async (e) => {
-  e.preventDefault();
-
-  try {
-    setSubmitting(true);
-
-    const res = await apiFetch(PAY_ENDPOINT(selectedOrder._id), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ amount: Number(amount) }),
-    });
-
-    const text = await res.text();
-    let data = {};
+  const submitPayment = async (e) => {
+    e.preventDefault();
     try {
-      data = text ? JSON.parse(text) : {};
-    } catch {
-      data = { message: text };
+      setSubmitting(true);
+      const res = await apiFetch(PAY_ENDPOINT(selectedOrder._id), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: Number(amount) }),
+      });
+      const text = await res.text();
+      let data = {};
+      try { data = text ? JSON.parse(text) : {}; } catch { data = { message: text }; }
+      if (!res.ok) {
+        showToast("error", data?.error || data?.message || `Request failed (${res.status})`);
+        return;
+      }
+      showToast("success", t("payment_success"));
+      setAmount("");
+      setSelectedId("");
+      await loadOrders();
+    } catch (e) {
+      showToast("error", e?.message || "Network error");
+    } finally {
+      setSubmitting(false);
     }
-
-    if (!res.ok) {
-      // ✅ show backend error message if exists
-      const msg = data?.error || data?.message || `Request failed (${res.status})`;
-      showToast("error", msg);
-      return;
-    }
-
-    showToast("success", "Payment recorded successfully");
-    setAmount("");
-    setSelectedId("");
-    await loadOrders();
-  } catch (e) {
-    showToast("error", e?.message || "Network error");
-  } finally {
-    setSubmitting(false);
-  }
-};
-
+  };
 
   return (
     <div className="space-y-4">
-      <Toast
-        type={toast.type}
-        message={toast.message}
-        onClose={() => setToast({ type: "", message: "" })}
-      />
+      <Toast type={toast.type} message={toast.message} onClose={() => setToast({ type: "", message: "" })} />
 
-      {/* Header (responsive) */}
       <div className="bg-white rounded-xl shadow p-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold">Payments</h1>
-            <p className="text-xs sm:text-sm text-gray-500">
-              Record payments for outstanding orders
-            </p>
+            <h1 className="text-xl sm:text-2xl font-bold">{t("payments_title")}</h1>
+            <p className="text-xs sm:text-sm text-gray-500">{t("payments_sub")}</p>
           </div>
-
           <button
             className="w-full sm:w-auto inline-flex items-center justify-center rounded-lg px-4 py-2 font-semibold text-white bg-green-600 hover:bg-green-700 transition"
             onClick={loadOrders}
           >
-            Refresh
+            {t("refresh")}
           </button>
         </div>
       </div>
@@ -134,52 +111,39 @@ const submitPayment = async (e) => {
         {/* Orders List */}
         <div className="lg:col-span-2 bg-white rounded-xl shadow p-4">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold">Outstanding Orders</h2>
+            <h2 className="font-semibold">{t("outstanding_orders")}</h2>
             <span className="text-xs sm:text-sm text-gray-500">
-              {dueOrders.length} order(s)
+              {dueOrders.length} {t("orders_unit")}
             </span>
           </div>
 
-          {loadingOrders && (
-            <p className="text-sm text-gray-600">Loading orders...</p>
-          )}
-
+          {loadingOrders && <p className="text-sm text-gray-600">{t("loading_orders")}</p>}
           {!loadingOrders && dueOrders.length === 0 && (
-            <p className="text-sm text-gray-500">No outstanding payments 🎉</p>
+            <p className="text-sm text-gray-500">{t("no_outstanding")}</p>
           )}
 
           <div className="space-y-2">
             {dueOrders.map((o) => (
               <button
                 key={o._id}
-                onClick={() => {
-                  setSelectedId(o._id);
-                  setAmount(String(o.due));
-                }}
+                onClick={() => { setSelectedId(o._id); setAmount(String(o.due)); }}
                 className={`w-full text-left border rounded-lg p-3 transition ${
-                  selectedId === o._id
-                    ? "border-blue-600 bg-blue-50"
-                    : "border-gray-200 hover:bg-gray-50"
+                  selectedId === o._id ? "border-blue-600 bg-blue-50" : "border-gray-200 hover:bg-gray-50"
                 }`}
               >
-                {/* Mobile-friendly row: stacks on very small screens */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <div className="min-w-0">
                     <p className="font-semibold text-sm truncate">
                       {o.customer?.name || "Unknown Customer"}
                     </p>
                     <p className="text-xs text-gray-500">
-                      Status: {o.status} • Order:{" "}
-                      <span className="font-medium">{o._id.slice(-6)}</span>
+                      {t("card_status")}: {t(`status_${o.status}`)} • {t("order_hash")}{o._id.slice(-6)}
                     </p>
                   </div>
-
                   <div className="text-left sm:text-right">
-                    <p className="text-sm font-bold text-red-600">
-                      Due: {o.due}
-                    </p>
+                    <p className="text-sm font-bold text-red-600">{t("card_due")}: {o.due}</p>
                     <p className="text-xs text-gray-500">
-                      Total: {o.totalAmount} • Paid: {o.paidAmount}
+                      {t("card_total")}: {o.totalAmount} • {t("card_paid")}: {o.paidAmount}
                     </p>
                   </div>
                 </div>
@@ -190,37 +154,32 @@ const submitPayment = async (e) => {
 
         {/* Payment Form */}
         <div className="bg-white rounded-xl shadow p-4">
-          <h2 className="font-semibold mb-3">Record Payment</h2>
+          <h2 className="font-semibold mb-3">{t("record_payment")}</h2>
 
           {!selectedOrder ? (
-            <p className="text-sm text-gray-500">
-              Select an order from the list to record a payment.
-            </p>
+            <p className="text-sm text-gray-500">{t("select_order_to_pay")}</p>
           ) : (
             <div className="mb-3 text-sm">
-              <p className="font-semibold truncate">
-                {selectedOrder.customer?.name}
-              </p>
+              <p className="font-semibold truncate">{selectedOrder.customer?.name}</p>
               <p className="text-gray-500 text-xs">
-                Total: {selectedOrder.totalAmount} • Paid: {selectedOrder.paidAmount}
+                {t("card_total")}: {selectedOrder.totalAmount} • {t("card_paid")}: {selectedOrder.paidAmount}
               </p>
-              <p className="text-red-600 font-semibold mt-1">Due: {maxDue}</p>
+              <p className="text-red-600 font-semibold mt-1">{t("card_due")}: {maxDue}</p>
             </div>
           )}
 
           <form onSubmit={submitPayment} className="space-y-3">
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Amount</label>
+              <label className="block text-xs text-gray-500 mb-1">{t("amount_label")}</label>
               <input
                 type="number"
                 step="0.01"
                 min="0"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                placeholder="Enter amount"
+                placeholder={t("enter_amount")}
                 className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-
               {selectedOrder && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
                   <button
@@ -228,14 +187,14 @@ const submitPayment = async (e) => {
                     className="w-full inline-flex items-center justify-center rounded-lg px-4 py-2 font-semibold text-white bg-green-600 hover:bg-green-700 transition"
                     onClick={() => setAmount(String(maxDue))}
                   >
-                    Pay Full
+                    {t("pay_full")}
                   </button>
                   <button
                     type="button"
                     className="w-full inline-flex items-center justify-center rounded-lg px-4 py-2 font-semibold text-white bg-gray-600 hover:bg-gray-700 transition"
                     onClick={() => setAmount("")}
                   >
-                    Clear
+                    {t("clear")}
                   </button>
                 </div>
               )}
@@ -245,22 +204,16 @@ const submitPayment = async (e) => {
               type="submit"
               disabled={!selectedOrder || submitting}
               className={`w-full py-2 rounded-lg text-white font-semibold transition ${
-                !selectedOrder || submitting
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-blue-600 hover:bg-blue-700"
+                !selectedOrder || submitting ? "bg-gray-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"
               }`}
             >
-              {submitting ? "Saving..." : "Save Payment"}
+              {submitting ? t("saving_payment") : t("save_payment")}
             </button>
           </form>
 
-          <p className="text-xs text-gray-400 mt-3">
-            Tip: select an order to auto-fill the due amount.
-          </p>
+          <p className="text-xs text-gray-400 mt-3">{t("tip_select_order")}</p>
         </div>
       </div>
     </div>
   );
 }
-
-

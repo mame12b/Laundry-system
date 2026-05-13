@@ -5,21 +5,21 @@ import {
   FiSearch, FiX, FiPlus, FiMinus, FiUser,
   FiPhone, FiMapPin, FiCheck, FiShoppingCart, FiArrowLeft,
 } from "react-icons/fi";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function CreateOrder({ user }) {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const role = (user?.role || "").toUpperCase();
 
   const [customers, setCustomers]   = useState([]);
   const [prices, setPrices]         = useState([]);
   const [loadError, setLoadError]   = useState("");
 
-  // customer selection
   const [customerSearch, setCustomerSearch]   = useState("");
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [showList, setShowList]               = useState(false);
 
-  // inline new-customer form
   const [showNewForm, setShowNewForm] = useState(false);
   const [cName, setCName]   = useState("");
   const [cPhone, setCPhone] = useState("");
@@ -28,36 +28,29 @@ export default function CreateOrder({ user }) {
   const [cLoading, setCLoading] = useState(false);
   const [cError, setCError]     = useState("");
 
-  // cart: { priceItemId: qty }
   const [cart, setCart] = useState({});
-
   const [loading, setLoading]       = useState(false);
   const [submitError, setSubmitError] = useState("");
 
-useEffect(() => {
-  const loadData = async () => {
-    try {
-      const [cRes, pRes] = await Promise.all([
-        apiFetch(`${API}/customers`),
-        apiFetch(`${API}/prices`),
-      ]);
-
-      const cData = await cRes.json().catch(() => []);
-      const pData = await pRes.json().catch(() => []);
-
-      if (!cRes.ok) throw new Error(cData.message || "Failed to load customers");
-      if (!pRes.ok) throw new Error(pData.message || "Failed to load prices");
-
-      setCustomers(Array.isArray(cData) ? cData : []);
-      setPrices(Array.isArray(pData) ? pData : []);
-    } catch (e) {
-      setLoadError(e.message);
-    }
-  };
-
-  loadData();
-}, []);
-
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [cRes, pRes] = await Promise.all([
+          apiFetch(`${API}/customers`),
+          apiFetch(`${API}/prices`),
+        ]);
+        const cData = await cRes.json().catch(() => []);
+        const pData = await pRes.json().catch(() => []);
+        if (!cRes.ok) throw new Error(cData.message || "Failed to load customers");
+        if (!pRes.ok) throw new Error(pData.message || "Failed to load prices");
+        setCustomers(Array.isArray(cData) ? cData : []);
+        setPrices(Array.isArray(pData) ? pData : []);
+      } catch (e) {
+        setLoadError(e.message);
+      }
+    };
+    loadData();
+  }, []);
 
   const filteredCustomers = useMemo(() => {
     const q = customerSearch.trim().toLowerCase();
@@ -101,7 +94,7 @@ useEffect(() => {
   };
 
   const createCustomer = async () => {
-    if (!cName.trim()) { setCError("Name is required"); return; }
+    if (!cName.trim()) { setCError(t("customer_name_label").replace(" *", "") + " is required"); return; }
     setCError("");
     try {
       setCLoading(true);
@@ -126,8 +119,8 @@ useEffect(() => {
   };
 
   const submit = async () => {
-    if (!selectedCustomer) { setSubmitError("Please select a customer"); return; }
-    if (cartItems.length === 0) { setSubmitError("Add at least one item"); return; }
+    if (!selectedCustomer) { setSubmitError(t("err_select_customer")); return; }
+    if (cartItems.length === 0) { setSubmitError(t("err_add_item")); return; }
     setSubmitError("");
     try {
       setLoading(true);
@@ -152,7 +145,7 @@ useEffect(() => {
   if (role !== "COLLECTOR" && role !== "MANAGER") {
     return (
       <div className="bg-white p-6 rounded-xl shadow">
-        <p className="text-red-600 font-semibold">Access denied</p>
+        <p className="text-red-600 font-semibold">{t("access_denied")}</p>
       </div>
     );
   }
@@ -169,8 +162,8 @@ useEffect(() => {
           <FiArrowLeft size={20} />
         </button>
         <div>
-          <h1 className="text-xl font-bold text-gray-900">New Order</h1>
-          <p className="text-sm text-gray-400">Collect laundry from customer</p>
+          <h1 className="text-xl font-bold text-gray-900">{t("new_order")}</h1>
+          <p className="text-sm text-gray-400">{t("new_order_sub")}</p>
         </div>
       </div>
 
@@ -180,17 +173,16 @@ useEffect(() => {
         </div>
       )}
 
-      {/* ── Step 1: Customer ───────────────────────────── */}
+      {/* Step 1: Customer */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
         <div className="flex items-center gap-2 mb-3">
           <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${selectedCustomer ? "bg-green-500 text-white" : "bg-blue-600 text-white"}`}>
             {selectedCustomer ? <FiCheck size={12} /> : "1"}
           </span>
-          <h2 className="font-semibold text-gray-900">Customer</h2>
+          <h2 className="font-semibold text-gray-900">{t("step_customer")}</h2>
         </div>
 
         {selectedCustomer ? (
-          /* Selected state */
           <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl p-3">
             <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
               {selectedCustomer.name.charAt(0).toUpperCase()}
@@ -198,7 +190,7 @@ useEffect(() => {
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-gray-900 truncate">{selectedCustomer.name}</p>
               <p className="text-xs text-gray-500">
-                {selectedCustomer.phone || "No phone"} · {selectedCustomer.type}
+                {selectedCustomer.phone || t("no_phone")} · {selectedCustomer.type}
               </p>
             </div>
             <button
@@ -210,12 +202,11 @@ useEffect(() => {
           </div>
         ) : (
           <div className="space-y-2">
-            {/* Search input */}
             <div className="relative">
               <FiSearch size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
               <input
                 type="text"
-                placeholder="Search name or phone…"
+                placeholder={t("search_customer")}
                 value={customerSearch}
                 onChange={e => { setCustomerSearch(e.target.value); setShowList(true); setShowNewForm(false); }}
                 onFocus={() => setShowList(true)}
@@ -231,7 +222,6 @@ useEffect(() => {
               )}
             </div>
 
-            {/* Dropdown list */}
             {showList && !showNewForm && filteredCustomers.length > 0 && (
               <div className="border rounded-xl overflow-hidden divide-y shadow-sm">
                 {filteredCustomers.map(c => (
@@ -246,14 +236,13 @@ useEffect(() => {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-900 truncate">{c.name}</p>
-                      <p className="text-xs text-gray-400">{c.phone || "No phone"} · {c.type}</p>
+                      <p className="text-xs text-gray-400">{c.phone || t("no_phone")} · {c.type}</p>
                     </div>
                   </button>
                 ))}
               </div>
             )}
 
-            {/* New customer button */}
             {!showNewForm && (
               <button
                 type="button"
@@ -262,16 +251,15 @@ useEffect(() => {
               >
                 <FiPlus size={16} />
                 {customerSearch.trim()
-                  ? <>New customer &ldquo;<span className="font-bold">{customerSearch}</span>&rdquo;</>
-                  : "New Customer"}
+                  ? <>{t("new_customer_btn")} &ldquo;<span className="font-bold">{customerSearch}</span>&rdquo;</>
+                  : t("new_customer")}
               </button>
             )}
 
-            {/* Inline new-customer form */}
             {showNewForm && (
               <div className="border border-blue-200 bg-blue-50 rounded-xl p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold text-blue-800">New Customer</p>
+                  <p className="text-sm font-semibold text-blue-800">{t("new_customer_form")}</p>
                   <button type="button" onClick={() => setShowNewForm(false)} className="text-gray-400 hover:text-gray-600">
                     <FiX size={16} />
                   </button>
@@ -281,11 +269,10 @@ useEffect(() => {
                   <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{cError}</p>
                 )}
 
-                {/* Name */}
                 <div className="relative">
                   <FiUser size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                   <input
-                    placeholder="Name *"
+                    placeholder={t("customer_name_label")}
                     value={cName}
                     onChange={e => setCName(e.target.value)}
                     className="w-full border rounded-lg pl-8 pr-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -293,33 +280,30 @@ useEffect(() => {
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
-                  {/* Phone */}
                   <div className="relative">
                     <FiPhone size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                     <input
-                      placeholder="Phone"
+                      placeholder={t("customer_phone_label")}
                       value={cPhone}
                       onChange={e => setCPhone(e.target.value)}
                       className="w-full border rounded-lg pl-8 pr-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
-                  {/* Type */}
                   <select
                     value={cType}
                     onChange={e => setCType(e.target.value)}
                     className="w-full border rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="Individual">Individual</option>
-                    <option value="Hotel">Hotel</option>
-                    <option value="Regular">Regular</option>
+                    <option value="Individual">{t("type_individual")}</option>
+                    <option value="Hotel">{t("type_hotel")}</option>
+                    <option value="Regular">{t("type_regular")}</option>
                   </select>
                 </div>
 
-                {/* Address */}
                 <div className="relative">
                   <FiMapPin size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                   <input
-                    placeholder="Address (optional)"
+                    placeholder={t("customer_address_label")}
                     value={cAddr}
                     onChange={e => setCAddr(e.target.value)}
                     className="w-full border rounded-lg pl-8 pr-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -332,7 +316,7 @@ useEffect(() => {
                   disabled={cLoading}
                   className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition disabled:opacity-60"
                 >
-                  {cLoading ? "Creating…" : "Create & Select"}
+                  {cLoading ? t("creating") : t("create_and_select")}
                 </button>
               </div>
             )}
@@ -340,16 +324,16 @@ useEffect(() => {
         )}
       </div>
 
-      {/* ── Step 2: Items ──────────────────────────────── */}
+      {/* Step 2: Items */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
         <div className="flex items-center gap-2 mb-3">
           <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${cartItems.length > 0 ? "bg-green-500 text-white" : "bg-blue-600 text-white"}`}>
             {cartItems.length > 0 ? <FiCheck size={12} /> : "2"}
           </span>
-          <h2 className="font-semibold text-gray-900">Items</h2>
+          <h2 className="font-semibold text-gray-900">{t("step_items")}</h2>
           {cartItems.length > 0 && (
             <span className="ml-auto text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-semibold">
-              {cartItems.reduce((s, i) => s + i.qty, 0)} pcs
+              {cartItems.reduce((s, i) => s + i.qty, 0)} {t("pcs")}
             </span>
           )}
         </div>
@@ -384,7 +368,6 @@ useEffect(() => {
                   <p className="text-xs text-blue-600 font-medium mt-0.5">
                     {p.pricePerUnit} <span className="text-gray-400 font-normal">/{p.unit}</span>
                   </p>
-
                   {selected && (
                     <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-blue-200">
                       <button
@@ -417,12 +400,11 @@ useEffect(() => {
         </div>
       )}
 
-      {/* ── Sticky bottom bar ─────────────────────────── */}
+      {/* Sticky bottom bar */}
       <div className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 shadow-xl px-4 py-3">
         <div className="max-w-xl mx-auto">
           {cartItems.length > 0 ? (
             <div className="space-y-2">
-              {/* Item chips */}
               <div className="flex flex-wrap gap-1.5">
                 {cartItems.map(i => (
                   <span key={i._id} className="text-xs bg-gray-100 text-gray-700 px-2.5 py-1 rounded-full font-medium">
@@ -433,7 +415,7 @@ useEffect(() => {
               </div>
               <div className="flex items-center gap-3">
                 <div>
-                  <p className="text-xs text-gray-400 leading-none">Total</p>
+                  <p className="text-xs text-gray-400 leading-none">{t("card_total")}</p>
                   <p className="text-2xl font-extrabold text-gray-900 leading-tight">
                     {total.toFixed(2)} <span className="text-sm font-normal text-gray-400">AED</span>
                   </p>
@@ -445,20 +427,20 @@ useEffect(() => {
                   className="ml-auto flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold rounded-2xl text-sm transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
                 >
                   <FiShoppingCart size={16} />
-                  {loading ? "Saving…" : "Create Order"}
+                  {loading ? t("saving") : t("create_order_btn")}
                 </button>
               </div>
             </div>
           ) : (
             <div className="flex items-center justify-between">
               <p className="text-sm text-gray-400">
-                {selectedCustomer ? "Tap items above to add" : "Select a customer first"}
+                {selectedCustomer ? t("tap_to_add") : t("select_customer_first")}
               </p>
               <button
                 disabled
                 className="px-5 py-2.5 bg-gray-100 text-gray-400 font-semibold rounded-xl text-sm cursor-not-allowed"
               >
-                Create Order
+                {t("create_order_btn")}
               </button>
             </div>
           )}

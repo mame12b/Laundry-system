@@ -23,6 +23,7 @@ export const canAccess = {
   customers: (role) => [ROLES.MANAGER, ROLES.COLLECTOR].includes(role),
   users: (role) => [ROLES.MANAGER].includes(role),
   invoices: (role) => [ROLES.MANAGER, ROLES.CASHIER].includes(role),
+  dailyOrders: (role) => [ROLES.MANAGER].includes(role),
 };
 
 export function canUpdateOrderStatus(role, currentStatus) {

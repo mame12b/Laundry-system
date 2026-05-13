@@ -1,18 +1,19 @@
 import { Link, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useMemo, useState, useEffect } from "react";
-import { FiHome, FiPackage, FiDollarSign, FiBarChart2, FiLogOut, FiMenu, FiX, FiTag, FiUsers, FiUserCheck, FiFileText } from "react-icons/fi";
+import { FiHome, FiPackage, FiDollarSign, FiBarChart2, FiLogOut, FiMenu, FiX, FiTag, FiUsers, FiUserCheck, FiFileText, FiGrid } from "react-icons/fi";
 import { canAccess, normalizeRole } from "../utils/permissions";
+import { useLanguage } from "../context/LanguageContext";
 
 export default function DashboardLayout({ user, setUser }) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
+  const { t, isRTL, toggleLang } = useLanguage();
 
- useEffect(() => {
-  const timer = setTimeout(() => setOpen(false), 0);
-  return () => clearTimeout(timer);
-}, [pathname]);
-
+  useEffect(() => {
+    const timer = setTimeout(() => setOpen(false), 0);
+    return () => clearTimeout(timer);
+  }, [pathname]);
 
   const role = useMemo(() => normalizeRole(user?.role), [user?.role]);
 
@@ -26,36 +27,51 @@ export default function DashboardLayout({ user, setUser }) {
     <div className="min-h-screen bg-gray-100">
       {/* Mobile top bar */}
       <div className="md:hidden sticky top-0 z-40 bg-white border-b">
-        <div className="flex items-center justify-between px-4 py-3">
-          <button onClick={() => setOpen(true)} className="p-2 rounded-lg hover:bg-gray-100" aria-label="Open menu">
+        <div className="flex items-center justify-between px-3 py-2 gap-2">
+          <button onClick={() => setOpen(true)} className="p-2 rounded-lg hover:bg-gray-100 flex-shrink-0" aria-label={t("open_menu")}>
             <FiMenu size={20} />
           </button>
-          <div className="text-center">
-            <div className="text-xs text-gray-500">Welcome</div>
-            <div className="font-semibold text-sm leading-5">{user?.name}</div>
+          <div className="text-center flex-1 min-w-0">
+            <div className="text-xs text-gray-500">{t("welcome")}</div>
+            <div className="font-semibold text-sm leading-5 truncate">{user?.name}</div>
           </div>
-          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">{user?.role}</span>
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <button
+              onClick={toggleLang}
+              className="text-xs font-semibold bg-gray-100 hover:bg-blue-100 text-gray-700 hover:text-blue-700 px-2 py-1 rounded-lg transition"
+            >
+              {t("lang_toggle")}
+            </button>
+            <button
+              onClick={logout}
+              className="p-2 rounded-lg text-red-500 hover:bg-red-50 transition"
+              aria-label={t("logout")}
+              title={t("logout")}
+            >
+              <FiLogOut size={18} />
+            </button>
+          </div>
         </div>
       </div>
 
       <div className="flex">
         {/* Desktop sidebar */}
         <aside className="hidden md:flex md:w-64 md:flex-col md:min-h-screen bg-white shadow-lg">
-          <SidebarContent role={role} pathname={pathname} onLogout={logout} user={user} onNavigate={() => {}} />
+          <SidebarContent role={role} pathname={pathname} onLogout={logout} user={user} onNavigate={() => {}} t={t} toggleLang={toggleLang} />
         </aside>
 
         {/* Mobile drawer */}
         {open && (
           <>
             <div className="fixed inset-0 bg-black/40 z-50" onClick={() => setOpen(false)} />
-            <aside className="fixed z-50 inset-y-0 left-0 w-72 bg-white shadow-2xl">
+            <aside className={`fixed z-50 inset-y-0 ${isRTL ? "right-0" : "left-0"} w-72 bg-white shadow-2xl`}>
               <div className="flex items-center justify-between p-4 border-b">
-                <h1 className="text-lg font-bold text-blue-600">Laundry System</h1>
-                <button onClick={() => setOpen(false)} className="p-2 rounded-lg hover:bg-gray-100" aria-label="Close">
+                <h1 className="text-lg font-bold text-blue-600">{t("app_name")}</h1>
+                <button onClick={() => setOpen(false)} className="p-2 rounded-lg hover:bg-gray-100" aria-label={t("close")}>
                   <FiX size={20} />
                 </button>
               </div>
-              <SidebarContent role={role} pathname={pathname} onLogout={logout} user={user} onNavigate={() => setOpen(false)} />
+              <SidebarContent role={role} pathname={pathname} onLogout={logout} user={user} onNavigate={() => setOpen(false)} t={t} toggleLang={toggleLang} />
             </aside>
           </>
         )}
@@ -64,10 +80,18 @@ export default function DashboardLayout({ user, setUser }) {
         <div className="flex-1 min-w-0">
           <header className="hidden md:flex bg-white shadow px-6 py-4 justify-between items-center">
             <div>
-              <p className="text-xs text-gray-500">Welcome back</p>
+              <p className="text-xs text-gray-500">{t("welcome_back")}</p>
               <h2 className="text-lg font-semibold">{user?.name}</h2>
             </div>
-            <span className="text-sm bg-blue-100 text-blue-700 px-3 py-1 rounded-full">{user?.role}</span>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={toggleLang}
+                className="text-sm font-semibold bg-gray-100 hover:bg-blue-100 text-gray-700 hover:text-blue-700 px-3 py-1.5 rounded-lg transition"
+              >
+                {t("lang_toggle")}
+              </button>
+              <span className="text-sm bg-blue-100 text-blue-700 px-3 py-1 rounded-full">{user?.role}</span>
+            </div>
           </header>
           <main className="p-4 sm:p-6"><Outlet /></main>
         </div>
@@ -76,51 +100,61 @@ export default function DashboardLayout({ user, setUser }) {
   );
 }
 
-function SidebarContent({ role, pathname, onLogout, user, onNavigate }) {
+function SidebarContent({ role, pathname, onLogout, user, onNavigate, t, toggleLang }) {
   return (
     <div className="flex flex-col h-full overflow-y-auto">
       <div className="hidden md:block p-6 border-b">
-        <h1 className="text-xl font-bold text-blue-600">Laundry System</h1>
+        <h1 className="text-xl font-bold text-blue-600">{t("app_name")}</h1>
         <p className="text-xs text-gray-400 mt-1">{user?.name}</p>
       </div>
 
       <nav className="p-4 space-y-1">
-        <NavItem to="/" label="Home" icon={<FiHome />} pathname={pathname} onNavigate={onNavigate} exact />
+        <NavItem to="/" label={t("nav_home")} icon={<FiHome />} pathname={pathname} onNavigate={onNavigate} exact />
 
         {canAccess.dashboard(role) && (
-          <NavItem to="/dashboard" label="Dashboard" icon={<FiBarChart2 />} pathname={pathname} onNavigate={onNavigate} />
+          <NavItem to="/dashboard" label={t("nav_dashboard")} icon={<FiBarChart2 />} pathname={pathname} onNavigate={onNavigate} />
         )}
 
-        <NavItem to="/orders" label="Orders" icon={<FiPackage />} pathname={pathname} onNavigate={onNavigate} />
+        <NavItem to="/orders" label={t("nav_orders")} icon={<FiPackage />} pathname={pathname} onNavigate={onNavigate} />
 
         {canAccess.customers(role) && (
-          <NavItem to="/customers" label="Customers" icon={<FiUsers />} pathname={pathname} onNavigate={onNavigate} />
+          <NavItem to="/customers" label={t("nav_customers")} icon={<FiUsers />} pathname={pathname} onNavigate={onNavigate} />
         )}
 
         {canAccess.payments(role) && (
-          <NavItem to="/payments" label="Payments" icon={<FiDollarSign />} pathname={pathname} onNavigate={onNavigate} />
+          <NavItem to="/payments" label={t("nav_payments")} icon={<FiDollarSign />} pathname={pathname} onNavigate={onNavigate} />
         )}
 
         {canAccess.invoices(role) && (
-          <NavItem to="/invoices" label="Invoices" icon={<FiFileText />} pathname={pathname} onNavigate={onNavigate} />
+          <NavItem to="/invoices" label={t("nav_invoices")} icon={<FiFileText />} pathname={pathname} onNavigate={onNavigate} />
         )}
 
         {canAccess.prices(role) && (
-          <NavItem to="/prices" label="Price List" icon={<FiTag />} pathname={pathname} onNavigate={onNavigate} />
+          <NavItem to="/prices" label={t("nav_prices")} icon={<FiTag />} pathname={pathname} onNavigate={onNavigate} />
         )}
 
         {canAccess.users(role) && (
-          <NavItem to="/users" label="Staff" icon={<FiUserCheck />} pathname={pathname} onNavigate={onNavigate} />
+          <NavItem to="/users" label={t("nav_staff")} icon={<FiUserCheck />} pathname={pathname} onNavigate={onNavigate} />
+        )}
+
+        {canAccess.dailyOrders(role) && (
+          <NavItem to="/daily-orders" label={t("daily_orders")} icon={<FiGrid />} pathname={pathname} onNavigate={onNavigate} />
         )}
 
         {canAccess.reports(role) && (
-          <NavItem to="/reports" label="Reports" icon={<FiBarChart2 />} pathname={pathname} onNavigate={onNavigate} />
+          <NavItem to="/reports" label={t("nav_reports")} icon={<FiBarChart2 />} pathname={pathname} onNavigate={onNavigate} />
         )}
       </nav>
 
-      <div className="mt-auto p-4 border-t">
+      <div className="mt-auto p-4 border-t space-y-2">
+        <button
+          onClick={toggleLang}
+          className="flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-800 w-full"
+        >
+          🌐 {t("lang_toggle")}
+        </button>
         <button onClick={onLogout} className="flex items-center gap-2 text-red-500 hover:text-red-700 text-sm">
-          <FiLogOut /> Logout
+          <FiLogOut /> {t("logout")}
         </button>
       </div>
     </div>

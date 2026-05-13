@@ -20,6 +20,7 @@ import {
   getOrderById,
   getHotelOrders,
   updateOrderStatus,
+  updateOrderItems,
   addPayment,
   assignOrder,
 } from "../controllers/order.controller.js";
@@ -37,6 +38,7 @@ router.get("/", protect, allowRoles("Manager","Cashier","Collector","Washer","So
 router.get("/hotel", protect, allowRoles("Hotel"), getHotelOrders);
 router.get("/:id", protect, allowRoles("Manager","Cashier","Collector","Washer","Sorter","Ironer","Driver"), getOrderById);
 router.post("/", protect, allowRoles("Collector","Manager"), createOrder);
+router.patch("/:id/items", protect, allowRoles("Manager", "Collector"), updateOrderItems);
 router.patch("/:id/assign", protect, allowRoles("Manager"), assignOrder);
 router.patch("/:id/status", protect, allowRoles("Manager","Collector","Washer","Sorter","Ironer","Driver"), updateOrderStatus);
 router.post("/:id/payment", protect, allowRoles("Cashier","Manager"), addPayment);

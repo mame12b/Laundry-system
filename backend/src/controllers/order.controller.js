@@ -31,8 +31,9 @@ export const getOrders = async (req, res) => {
 
     const orders = await Order.find(q)
       .sort({ createdAt: -1 })
-      .populate("customer", "name type phone")
+      .populate("customer", "name type phone address")
       .populate("collectedBy", "name phone role")
+      .populate("assignedTo", "name role")
       .populate("items.item", "name pricePerUnit unit");
 
     res.json(orders);
@@ -115,6 +116,45 @@ export const assignOrder = async (req, res) => {
     await order.save();
 
     res.json({ message: "Order assigned", order });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+export const updateOrderItems = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ message: "Order not found" });
+
+    if (order.status !== "PICKED") {
+      return res.status(400).json({ message: "Order can only be edited while status is PICKED" });
+    }
+
+    const role = req.user?.role;
+    if (role !== "Manager" && String(order.collectedBy) !== String(req.user._id)) {
+      return res.status(403).json({ message: "Not authorized to edit this order" });
+    }
+
+    const items = req.body.items;
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ message: "At least one item is required" });
+    }
+
+    order.items = items.map(i => ({
+      item: i.item,
+      qty: Number(i.qty),
+      price: Number(i.price),
+    }));
+
+    await order.save();
+
+    const populated = await Order.findById(order._id)
+      .populate("customer", "name type phone address")
+      .populate("collectedBy", "name phone role")
+      .populate("assignedTo", "name role")
+      .populate("items.item", "name pricePerUnit unit");
+
+    res.json(populated);
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }

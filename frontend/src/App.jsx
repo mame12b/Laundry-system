@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { useState  } from "react";
+import { LanguageProvider } from "./context/LanguageContext";
 
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -15,6 +16,7 @@ import PriceManagement from "./pages/PriceManagement";
 import CustomerManagement from "./pages/CustomerManagement";
 import UserManagement from "./pages/UserManagement";
 import Invoices from "./pages/Invoices";
+import DailyOrders from "./pages/DailyOrders";
 
 import RequireRole from "./components/RequireRole";
 import { canAccess } from "./utils/permissions";
@@ -35,6 +37,7 @@ export default function App() {
     });
 
   return (
+    <LanguageProvider>
     <Routes>
       <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login setUser={setUser} />} />
       <Route path="/register" element={user ? <Navigate to="/" replace /> : <Register />} />
@@ -80,10 +83,16 @@ export default function App() {
               <Invoices />
             </RequireRole>
           } />
+          <Route path="daily-orders" element={
+            <RequireRole user={user} allow={r => canAccess.dailyOrders(r)}>
+              <DailyOrders />
+            </RequireRole>
+          } />
         </Route>
       </Route>
 
       <Route path="*" element={<Navigate to={user ? "/" : "/login"} replace />} />
     </Routes>
+    </LanguageProvider>
   );
 }

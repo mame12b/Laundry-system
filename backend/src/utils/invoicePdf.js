@@ -31,7 +31,7 @@ export const generateInvoicePdf = (invoice, customer, orders, res) => {
     .fillColor(WHITE)
     .fontSize(26)
     .font("Helvetica-Bold")
-    .text("LaundryPro", M, 28, { lineBreak: false });
+    .text("Sparkle Laundry", M, 28, { lineBreak: false });
 
   // "INVOICE" label (right side)
   doc
@@ -224,7 +224,7 @@ export const generateInvoicePdf = (invoice, customer, orders, res) => {
     .fontSize(8)
     .font("Helvetica")
     .text(
-      "Thank you for choosing LaundryPro  •  Generated automatically by LaundryPro system",
+      "Thank you for choosing Sparkle Laundry  •  Generated automatically by Sparkle Laundry system",
       M,
       footerY + 19,
       { width: PW - 2 * M, align: "center" }
