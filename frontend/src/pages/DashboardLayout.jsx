@@ -44,11 +44,9 @@ export default function DashboardLayout({ user, setUser }) {
             </button>
             <button
               onClick={logout}
-              className="p-2 rounded-lg text-red-500 hover:bg-red-50 transition"
-              aria-label={t("logout")}
-              title={t("logout")}
+              className="text-xs font-semibold bg-red-50 hover:bg-red-100 text-red-600 px-2.5 py-1 rounded-lg transition"
             >
-              <FiLogOut size={18} />
+              {t("logout")}
             </button>
           </div>
         </div>
@@ -94,6 +92,10 @@ export default function DashboardLayout({ user, setUser }) {
             </div>
           </header>
           <main className="p-4 sm:p-6"><Outlet /></main>
+          <footer className="bg-white border-t mt-4 py-4 px-4 text-center">
+            <p className="text-xs font-semibold text-gray-500">{t("app_name")}</p>
+            <p className="text-xs text-gray-400 mt-0.5">{t("footer_tagline")}</p>
+          </footer>
         </div>
       </div>
     </div>

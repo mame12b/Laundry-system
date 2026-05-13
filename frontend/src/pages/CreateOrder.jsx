@@ -29,6 +29,7 @@ export default function CreateOrder({ user }) {
   const [cError, setCError]     = useState("");
 
   const [cart, setCart] = useState({});
+  const [itemSearch, setItemSearch] = useState("");
   const [loading, setLoading]       = useState(false);
   const [submitError, setSubmitError] = useState("");
 
@@ -78,6 +79,16 @@ export default function CreateOrder({ user }) {
   );
 
   const total = useMemo(() => cartItems.reduce((s, i) => s + i.subtotal, 0), [cartItems]);
+
+  // Items grid: selected items pinned first, then unselected filtered by search
+  const filteredPrices = useMemo(() => {
+    const q = itemSearch.trim().toLowerCase();
+    const selected   = prices.filter(p => cart[p._id]);
+    const unselected = prices
+      .filter(p => !cart[p._id])
+      .filter(p => !q || p.name.toLowerCase().includes(q));
+    return [...selected, ...unselected];
+  }, [prices, cart, itemSearch]);
 
   const selectCustomer = (c) => {
     setSelectedCustomer(c);
@@ -345,8 +356,33 @@ export default function CreateOrder({ user }) {
             ))}
           </div>
         ) : (
+          <>
+            {/* Item search */}
+            <div className="relative mb-3">
+              <FiSearch size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <input
+                type="text"
+                placeholder={`Search items… (${prices.length})`}
+                value={itemSearch}
+                onChange={e => setItemSearch(e.target.value)}
+                className="w-full border rounded-xl pl-9 pr-9 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+              />
+              {itemSearch && (
+                <button
+                  onClick={() => setItemSearch("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <FiX size={14} />
+                </button>
+              )}
+            </div>
+
+            {filteredPrices.length === 0 && (
+              <p className="text-sm text-gray-400 text-center py-4">No items match &ldquo;{itemSearch}&rdquo;</p>
+            )}
+
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {prices.map(p => {
+            {filteredPrices.map(p => {
               const qty = cart[p._id] || 0;
               const selected = qty > 0;
               return (
@@ -391,6 +427,7 @@ export default function CreateOrder({ user }) {
               );
             })}
           </div>
+          </>
         )}
       </div>
 

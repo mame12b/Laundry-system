@@ -10,6 +10,7 @@ export const translations = {
     cancel: "Cancel",
     open_menu: "Open menu",
     close: "Close",
+    footer_tagline: "Powered by Laundry System · All rights reserved",
 
     // Language toggle label (shows the language you can SWITCH TO)
     lang_toggle: "العربية",
@@ -207,6 +208,7 @@ export const translations = {
     refresh: "تحديث",
     cancel: "إلغاء",
     open_menu: "فتح القائمة",
+    footer_tagline: "مدعوم من نظام الغسيل · جميع الحقوق محفوظة",
     close: "إغلاق",
 
     // Language toggle label (shows the language you can SWITCH TO)
